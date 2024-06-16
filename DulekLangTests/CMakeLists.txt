@@ -24,8 +24,12 @@ set(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../Du")
 
 add_executable(DulekLangTests
     "${PROJECT_DIR}/Program/Settings.h"
-    
-    "main.cpp")
+    "${PROJECT_DIR}/ast/AstScope.cpp"
+    "${PROJECT_DIR}/ast/AstElement.cpp"
+    "${PROJECT_DIR}/ast/AstVariableDecl.cpp"
+    "${PROJECT_DIR}/ast/AstCast.cpp"
+    "${PROJECT_DIR}/ast/AstUniqueCast.cpp"
+    "main.cpp" "AstBuilderTest.h")
 
 
 target_include_directories(DulekLangTests PRIVATE ${GTEST_DIR_INCLUDE})

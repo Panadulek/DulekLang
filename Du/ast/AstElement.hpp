@@ -1,11 +1,12 @@
 #pragma once
 #include <string>
 #include <string_view>
-
+#include <functional>
+#include <array>
 class AstElement
 {
 public:
-	enum class ElementType
+	enum class ElementType : uint8_t
 	{
 		CONST_NUMBER,
 		TYPE,
@@ -31,3 +32,4 @@ public:
 	const bool nameIsKeyword();
 	virtual ~AstElement() = default;
 };
+

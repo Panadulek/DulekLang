@@ -1,4 +1,4 @@
-#include "../Du/Program/Settings.h"
+
 #include<gtest/gtest.h>
 #include <iostream>
 #include <algorithm>
@@ -7,6 +7,11 @@
 #else
 
 #endif
+
+
+#include "AstScopeTests.h"
+#include "CastTest.h"
+#include "AstBuilderTest.h"
 void attach()
 {
 #ifdef _WIN32
@@ -29,8 +34,4 @@ int main(int argc, char** argv)
 	return ret;
 }
 
-class DulekLangTestClass
-{
-public:
 
-};

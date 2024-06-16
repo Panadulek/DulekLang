@@ -1,5 +1,6 @@
 %{
 #include "parser.hpp"
+#include <string>
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -8,13 +9,19 @@
 %}
 
 %%
-[0-9]+  { yylval.intval = atoi(yytext); printf("number: %d\n", yylval.intval); return NUMBER; }
+"function" {return FUN_TOKEN;}
+[a-zA-Z_][a-zA-Z0-9_]*  { yylval.strval = strdup(yytext); return ID_TOKEN; }
+[0-9]+  { yylval.intval =  std::stoull(yytext);  return NUMBER_TOKEN; }
+
 "+" { return '+'; }
 "-" { return '-'; }
 "*" { return '*'; }
 "/" { return '/'; }
 "(" { return '('; }
 ")" { return ')'; }
+";" {return ';';}
+"->" {return ARROW_TOKEN;}
+"," {return ',';}
 [ \t\n]+ { /* Ignoruj bia³e znaki */ }
 .       {  }
 

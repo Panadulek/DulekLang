@@ -32,6 +32,20 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
+/* "%code requires" blocks.  */
+
+/* Line 1676 of yacc.c  */
+#line 20 "parser/parser.y"
+
+    #include "../ast/AstBuildSystem.hpp"
+    #include "../ast/AstElement.hpp"
+    #include <vector>
+    #include "../ast/BasicType.hpp"
+
+
+
+/* Line 1676 of yacc.c  */
+#line 49 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -39,7 +53,10 @@
    /* Put the tokens into the symbol table, so that GDB and other debuggers
       know about them.  */
    enum yytokentype {
-     NUMBER = 258
+     FUN_TOKEN = 258,
+     ARROW_TOKEN = 259,
+     ID_TOKEN = 260,
+     NUMBER_TOKEN = 261
    };
 #endif
 
@@ -50,14 +67,16 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 11 "parser/parser.y"
+#line 27 "parser/parser.y"
 
     int intval;
+    AstElement* astval;
+    char* strval;
 
 
 
 /* Line 1676 of yacc.c  */
-#line 61 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 80 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

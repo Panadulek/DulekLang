@@ -1,0 +1,10 @@
+class Decorator
+{
+
+};
+
+
+class TypeDecorator
+{
+
+};

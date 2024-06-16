@@ -14,4 +14,4 @@ endif()
 # Uwzględnij podprojekty.
 add_subdirectory ("Du")
 
-#add_subdirectory("DulekLangTests")
+add_subdirectory("DulekLangTests")
