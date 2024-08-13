@@ -1,5 +1,8 @@
 ﻿# Znajdź i dodaj Bison i Flex
 project ("Du")
+
+set(3RD_PARTY_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/../include_3rd_party")
+
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
@@ -7,6 +10,11 @@ find_package(FLEX REQUIRED)
 set(FLEX_INPUT lexer/scanner.l)
 set(BISON_INPUT parser/parser.y)
 set(LIBS_OUTPUT_DIR ${CMAKE_SOURCE_DIR}/libs)
+
+
+set(BISON_FLAGS "-v")
+set(FLEX_FLAGS "")  
+
 # Wygeneruj parser i skaner
 BISON_TARGET(Parser ${BISON_INPUT} ${CMAKE_CURRENT_SOURCE_DIR}/gen/parser.cpp)
 FLEX_TARGET(Scanner ${FLEX_INPUT} ${CMAKE_CURRENT_SOURCE_DIR}/gen/scanner.cpp)
@@ -21,7 +29,7 @@ add_library(DuAst STATIC
     ast/AstVariableDecl.cpp
     ast/AstCast.cpp
     ast/AstUniqueCast.cpp
- "ast/AstBuilder.hpp"  "ast/AstCast.hpp"  "ast/ScopeDecorator.hpp" "ast/BasicType.hpp" )
+ "ast/AstBuilder.hpp"  "ast/AstCast.hpp"  "ast/ScopeDecorator.hpp" "ast/BasicType.hpp"  "ast/AstFactor.cpp" "ast/AstStatement.cpp" "ast/AstReference.h")
 
 # Dodaj wykonywalny cel projektu
 add_executable (Du
@@ -30,9 +38,9 @@ add_executable (Du
     "Program/main.cpp" 
     "Program/Settings.h"
     "Program/Parser.cpp"
- "ast/AstBuilder.hpp"  "ast/AstCast.hpp"  "ast/ScopeDecorator.hpp" "ast/BasicType.hpp" )
+  "llvm_gen/llvm_generator.h" "llvm_gen/llvm_output_process.h" "llvm_gen/llvm_type_generator.hpp"  "llvm_gen/llvm_generator.cpp" "llvm_gen/llvm_stmt_generator.hpp" "llvm_gen/llvm_cache.hpp")
 
-set(3RD_PARTY_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/../include_3rd_party")
+
 target_include_directories(Du PRIVATE ${3RD_PARTY_INCLUDES}/gnu)
 target_link_libraries(Du PRIVATE DuAst)
 set_target_properties(DuAst PROPERTIES
@@ -46,3 +54,18 @@ if (CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET Du PROPERTY CXX_STANDARD 20)
 endif()
 
+add_definitions(-DNOMINMAX)
+target_compile_definitions(Du PRIVATE NOMINMAX)
+
+
+
+set(LLVM_DIR ${3RD_PARTY_INCLUDES}/llvm)
+set(LLVM_INCLUDE_DIR ${LLVM_DIR}/include)
+set(LLVM_LIB_DIR_DEBUG ${LLVM_DIR}/lib/debug)
+
+
+
+include_directories(${LLVM_INCLUDE_DIR})
+link_directories(${LLVM_LIB_DIR_DEBUG})
+file(GLOB LLVM_LIB_FILE ${LLVM_LIB_DIR_DEBUG}/*.lib)
+target_link_libraries(Du PRIVATE ${LLVM_LIB_FILE} ws2_32)

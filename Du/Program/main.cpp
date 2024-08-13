@@ -9,14 +9,27 @@
 #include "../ast/AstBuilder.hpp"
 #include <filesystem>
 #include <iostream>
+#include "../ast/AstConst.hpp"
+
+
+#include "../llvm_gen/llvm_generator.h"
+#include "../llvm_gen/llvm_output_process.h"
+
+
+#define NOMINMAX
+
+
 int main(int argc, char** argv)
 {
 	DuSettings settings;
 	std::cout << std::filesystem::current_path().string() << std::endl;
 	settings.AnaylzeArgs(argc, argv);
-	Parser parser(settings.getNextFile());
+	std::string_view filename = settings.getNextFile();
+	Parser parser(filename, settings.is_yyDebug());
 	parser.parse();
-	std::cin.get();
+	LlvmGen gen(filename.data());
+	gen.generateIr();
+	std::unique_ptr<llvmOutputProcess> m_outputProcess = std::make_unique<llvmIrOutputProcess>(gen, "main");
 	return 0;
 }
 

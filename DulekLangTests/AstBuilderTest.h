@@ -10,10 +10,11 @@ struct AstBuilderTest
 		const std::string fname("addScopesElement.du");
 		AstScope::GlobalApi::addFile(fname);
 		AstBuilder builder(fname);
-		builder.addElement(std::make_unique<AstScope>("fun1", builder.getActualScope()));
+		builder.addElement(AstBuildSystem::Instance().getFactory().scopeFactor().createScope("fun1", builder.getActualScope()));
 		constexpr std::size_t sizeInFun = 2;
-		builder.addElement(std::make_unique<AstVariableDecl>("u8", "var1"));
-		builder.addElement(std::make_unique<AstVariableDecl>("u8", "var2"));
+		
+		builder.addElement(AstBuildSystem::Instance().getFactory().varFactor().createVariable("u8", "var1", nullptr));
+		builder.addElement(AstBuildSystem::Instance().getFactory().varFactor().createVariable("u8", "var2", nullptr));
 		std::size_t size = builder.getActualScope()->getElementsCounter();
 		builder.exitScope();
 		return sizeInFun == size && builder.getActualScope()->getElementsCounter() == 1;
@@ -23,13 +24,13 @@ struct AstBuilderTest
 		const std::string fname("addScopesElement.du");
 		AstScope::GlobalApi::addFile(fname);
 		AstBuilder builder(fname);
-		builder.addElement(std::make_unique<AstScope>("fun1", builder.getActualScope()));
+		builder.addElement(AstBuildSystem::Instance().getFactory().scopeFactor().createScope("fun1", builder.getActualScope()));
 		constexpr std::size_t sizeInFun = 2;
-		builder.addElement(std::make_unique<AstVariableDecl>("u8", "var1"));
-		builder.addElement(std::make_unique<AstVariableDecl>("u8", "var2"));
+		builder.addElement(AstBuildSystem::Instance().getFactory().varFactor().createVariable("u8", "var1", nullptr));
+		builder.addElement(AstBuildSystem::Instance().getFactory().varFactor().createVariable("u8", "var2", nullptr));
 		std::size_t size = builder.getActualScope()->getElementsCounter();
 		builder.exitScope();
-		builder.addElement(std::make_unique<AstVariableDecl>("u8", "var3"));
+		builder.addElement(AstBuildSystem::Instance().getFactory().varFactor().createVariable("u8", "var3", nullptr));
 		return sizeInFun == size && builder.getActualScope()->getElementsCounter() == 2;
 	}
 };

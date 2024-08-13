@@ -12,6 +12,7 @@
 #include "AstScopeTests.h"
 #include "CastTest.h"
 #include "AstBuilderTest.h"
+
 void attach()
 {
 #ifdef _WIN32

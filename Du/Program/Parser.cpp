@@ -32,10 +32,10 @@ struct Parser::Impl
 
 };
 
-
-Parser::Parser(std::string_view filename) : m_currentFileName(filename), m_currentLine(0), m_pimpl(std::make_unique<Impl>())
+extern  int yydebug;
+Parser::Parser(std::string_view filename, bool debug) : m_currentFileName(filename), m_currentLine(0), m_pimpl(std::make_unique<Impl>()), m_debugParser(yydebug)
 {
-
+	m_debugParser = static_cast<int>(debug);
 }
 
 void Parser::parse()
@@ -48,6 +48,7 @@ void Parser::parse()
 	{
 		AstScope::GlobalApi::addFile(m_currentFileName);
 		AstBuildSystem::Instance().provideNextFilename(m_currentFileName);
+		AstBuildSystem::Instance().getBuilder().beginScope(AstScope::GlobalApi::getGlobalScopeForFile(m_currentFileName));
 		ret = m_pimpl->parse();
 	}
 }

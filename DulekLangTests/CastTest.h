@@ -1,6 +1,7 @@
 #include "../Du/ast/AstCast.hpp"
 #include "../Du/ast/AstScope.hpp"
 #include "../Du/ast/AstVariableDecl.hpp"
+#include "../Du/ast/AstBuildSystem.hpp"
 #include <gtest/gtest.h>
 #include <inttypes.h>
 struct AstCastTest
@@ -8,7 +9,7 @@ struct AstCastTest
 	
 	static bool castTestScopeToScope()
 	{
-		AstElement* ast = new AstScope("test", nullptr);
+		AstElement* ast = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("test", nullptr).release();
 		bool ret = ast_element_cast<AstScope>(ast);
 		delete ast;
 		return ret;
@@ -16,7 +17,7 @@ struct AstCastTest
 	}
 	static bool castTestVariableToVariable()
 	{
-		AstElement* ast = new AstVariableDecl("i8", "test");
+		AstElement* ast = AstBuildSystem::Instance().getFactory().varFactor().createVariable("i8", "test", nullptr).release();
 		bool ret = ast_element_cast<AstVariableDecl>(ast);
 		delete ast;
 		return ret;
@@ -24,14 +25,14 @@ struct AstCastTest
 
 	static bool castTestScopeToVariable()
 	{
-		AstElement* ast = new AstScope("test", nullptr);
+		AstElement* ast = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("test", nullptr).release();
 		bool ret = ast_element_cast<AstVariableDecl>(ast);
 		delete ast;
 		return ret;
 	}
 	static bool castTestVariableToScope()
 	{
-		AstElement* ast = new AstVariableDecl("i8", "test");
+		AstElement* ast = AstBuildSystem::Instance().getFactory().varFactor().createVariable("i8", "test", nullptr).release();
 		bool ret = ast_element_cast<AstScope>(ast);
 		delete ast;
 		return ret;
@@ -39,35 +40,40 @@ struct AstCastTest
 
 	static bool uniqueCastTestScopeToScope()
 	{
-		std::unique_ptr<AstElement> ast = std::make_unique<AstScope>("test", nullptr);
+
+		std::unique_ptr<AstElement> ast = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("test", nullptr);
 		bool ret = ast_unique_element_cast<AstScope>(ast);
 		return ret;
 
 	}
 	static bool uniqueCastTestVariableToVariable()
 	{
-		std::unique_ptr<AstElement> ast = std::make_unique<AstVariableDecl>("i8", "test");
+		std::unique_ptr<AstElement> ast = AstBuildSystem::Instance().getFactory().varFactor().createVariable("i8", "test", nullptr);
 		bool ret = ast_unique_element_cast<AstVariableDecl>(ast);
 		return ret;
 	}
 
 	static bool uniqueCastTestVariableToScope()
 	{
-		std::unique_ptr<AstElement> ast = std::make_unique<AstVariableDecl>("i8", "test");
+		std::unique_ptr<AstElement> ast = AstBuildSystem::Instance().getFactory().varFactor().createVariable("i8", "test", nullptr);
 		bool ret = ast_unique_element_cast<AstScope>(ast);
 		return ret;
 
 	}
 	static bool uniqueCastTestScopeToVariable()
 	{
-		std::unique_ptr<AstElement> ast = std::make_unique<AstScope>("test", nullptr);
+		
+		std::unique_ptr<AstElement> ast = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("test", nullptr);
 		bool ret = ast_unique_element_cast<AstVariableDecl>(ast);
 		return ret;
 	}
 
 	static bool astCastFasterThanDynamic()
 	{
-		return performanceAstCast() < performanceDynamicCast();
+		size_t astCast = performanceAstCast();
+		size_t dynCast = performanceDynamicCast();
+		printf("cycle of ast = %u, cycle of dynamic = %u\n", astCast, dynCast);
+		return astCast < dynCast;
 	}
 	static bool uniqueAstCastFasterThanDynamic()
 	{
@@ -80,7 +86,7 @@ private:
 		std::size_t begin = __rdtsc();
 		for (std::size_t i = 0; i < s_performaceLoopCounter; i++)
 		{
-			AstElement* ptr = new AstScope("", nullptr);
+			AstElement* ptr = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("", nullptr).release();
 			AstScope* casted = dynamic_cast<AstScope*>(ptr);
 			delete ptr;
 		}
@@ -92,7 +98,7 @@ private:
 		std::size_t begin = __rdtsc();
 		for (std::size_t i = 0; i < s_performaceLoopCounter; i++)
 		{
-			AstElement* ptr = new AstScope("", nullptr);
+			AstElement* ptr = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("", nullptr).release();
 			AstScope* casted = ast_element_cast<AstScope>(ptr);
 			delete ptr;
 		}
@@ -103,7 +109,7 @@ private:
 		std::size_t begin = __rdtsc();
 		for (std::size_t i = 0; i < s_performaceLoopCounter; i++)
 		{
-			std::unique_ptr<AstElement> ptr = std::make_unique<AstScope>("test", nullptr);
+			std::unique_ptr<AstElement> ptr = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("test", nullptr);
 			AstScope* casted = dynamic_cast<AstScope*>(ptr.get());
 		}
 		return __rdtsc() - begin;
@@ -115,7 +121,7 @@ private:
 		std::size_t begin = __rdtsc();
 		for (std::size_t i = 0; i < s_performaceLoopCounter; i++)
 		{
-			std::unique_ptr<AstElement> ptr = std::make_unique<AstScope>("test", nullptr);
+			std::unique_ptr<AstElement> ptr = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("test", nullptr);
 			AstScope* casted = ast_unique_element_cast<AstScope>(ptr);
 		}
 		return __rdtsc() - begin;

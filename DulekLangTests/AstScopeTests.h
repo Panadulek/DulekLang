@@ -5,6 +5,7 @@
 #include "../Du/ast/AstScope.hpp"
 #include <string_view>
 #include <intrin.h>
+#include "../Du/ast/AstBuildSystem.hpp"
 class AstScopeUnitTests
 {
 	using GlobalApi = AstScope::GlobalApi;
@@ -43,6 +44,18 @@ public:
 	}
 
 
+	static bool TestUpdateScope()
+	{
+		const std::string filename = "file.du";
+		bool ret = GlobalApi::addFile(filename);
+		AstBuildSystem::Instance().provideNextFilename(filename);
+		auto newScope = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("scope", AstScope::GlobalApi::getCurrentScope());
+		auto ptrScope = newScope.get();
+		AstBuildSystem::Instance().getBuilder().addElement(std::move(newScope));
+		return AstBuildSystem::Instance().getBuilder().getActualScope() == ptrScope;
+	}
+
+
 };
 
 
@@ -65,4 +78,9 @@ TEST(GLOBAL_API_GET_SCOPE_FOR_FILE, GLOBAL_API_GET_SCOPE1)
 TEST(GLOBAL_API_GET_SCOPE_FOR_FILE, GLOBAL_API_GET_SCOPE2)
 {
 	EXPECT_FALSE(AstScopeUnitTests::TestAstScopeGlobalApiGetScope2());
+}
+
+TEST(SCOPE, UPDATE_SCOPE)
+{
+	EXPECT_TRUE(AstScopeUnitTests::TestUpdateScope());
 }

@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt: plik projektu CMake najwyższego poziomu, wykonaj konfigurację globalną
 # i uwzględnij podprojekty w tym miejscu.
 #
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.20)
 
 # Włącz przeładowywanie kodu XAML na gorąco dla kompilatorów MSVC, jeśli jest to obsługiwane.
 if (POLICY CMP0141)

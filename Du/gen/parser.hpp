@@ -35,17 +35,19 @@
 /* "%code requires" blocks.  */
 
 /* Line 1676 of yacc.c  */
-#line 20 "parser/parser.y"
+#line 24 "E:/LocalRepo/Compilers/DulekLang/Du/parser/parser.y"
 
     #include "../ast/AstBuildSystem.hpp"
     #include "../ast/AstElement.hpp"
     #include <vector>
     #include "../ast/BasicType.hpp"
+    #include <iostream>
+
 
 
 
 /* Line 1676 of yacc.c  */
-#line 49 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 51 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -53,10 +55,9 @@
    /* Put the tokens into the symbol table, so that GDB and other debuggers
       know about them.  */
    enum yytokentype {
-     FUN_TOKEN = 258,
-     ARROW_TOKEN = 259,
-     ID_TOKEN = 260,
-     NUMBER_TOKEN = 261
+     ARROW_TOKEN = 258,
+     ID_TOKEN = 259,
+     NUMBER_TOKEN = 260
    };
 #endif
 
@@ -67,7 +68,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 27 "parser/parser.y"
+#line 33 "E:/LocalRepo/Compilers/DulekLang/Du/parser/parser.y"
 
     int intval;
     AstElement* astval;
@@ -76,7 +77,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 80 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 81 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

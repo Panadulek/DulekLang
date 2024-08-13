@@ -6,6 +6,13 @@
 #include <vector>
 #include <coroutine>
 #include <Windows.h>
+
+
+#ifdef _DEBUG
+	#define DU_YYDEBUG false
+#endif
+
+
 class DuSettings
 {
 	std::vector<std::string_view> m_filenames;
@@ -32,6 +39,14 @@ public:
 				continue;
 			}
 		}
+	}
+	bool is_yyDebug()
+	{
+#ifdef _DEBUG
+		return DU_YYDEBUG;
+#else
+		return false;
+#endif
 	}
 	std::string_view getNextFile()
 	{

@@ -10,9 +10,10 @@ class Parser final
 	std::size_t m_currentLine;
 	struct Impl;
 	std::unique_ptr<Impl> m_pimpl;
+	int& m_debugParser;
 public:
 	Parser() = delete;
-	Parser(std::string_view filename);
+	Parser(std::string_view filename, bool debug = false);
 	void parse();
 	~Parser();
 };
