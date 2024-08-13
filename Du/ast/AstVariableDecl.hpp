@@ -3,11 +3,15 @@
 #include "AstScope.hpp"
 class AstVariableDecl : public AstElement
 {
-	using VariableType = BasicTypes;
-	VariableType m_type;
+
+	BasicTypes m_type;
 	std::string_view m_id;
 	int m_pointerLevel;
 public:
-	AstVariableDecl(std::string_view tname, std::string_view id);
-
+	explicit AstVariableDecl(BasicTypes, std::string_view, AstScope*);
+	BasicTypes getVarType() { return m_type; }
+	AstScope* getScope()
+	{
+		return ast_element_cast<AstScope>(getParent());
+	}
 };

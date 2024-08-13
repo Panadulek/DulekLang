@@ -52,7 +52,7 @@ private:
 		auto iterator = m_connectFileWithGlobalScope.find(filename);
 		if (iterator == m_connectFileWithGlobalScope.end())
 		{
-			m_connectFileWithGlobalScope.insert({ filename, AstBuildSystem::Instance().getFactory().createScope("", nullptr)});
+			m_connectFileWithGlobalScope.insert({ filename, AstBuildSystem::Instance().getFactory().scopeFactor().createScope("", nullptr)});
 			return true;
 		}
 		return false;
@@ -92,7 +92,7 @@ private:
  * AST_SCOPE---
  */
 
-AstScope::AstScope(std::string_view name, AstElement* parent) : AstElement(name, AstElement::ElementType::SCOPE), m_parent(parent), m_function(nullptr)
+AstScope::AstScope(std::string_view name, AstElement* parent) : AstElement(name, AstElement::ElementType::SCOPE, parent), m_function(nullptr)
 {}
 auto AstScope::getFilteredViewByNotKeywordName()
 {

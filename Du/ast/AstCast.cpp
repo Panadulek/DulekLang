@@ -1,7 +1,13 @@
 
 #include "AstCast.hpp"
-#include "AstScope.hpp"
-#include "AstVariableDecl.hpp"
+
+
+class AstExpr;
+class AstScope;
+class AstVariableDecl;
+class AstStatement;
+class AstConst;
+class AstRef;
 #define CAST_CONDITION(X, Y) X && X->getAstType() == Y
 template<>
 AstScope* ast_element_cast<AstScope>(AstElement* source)
@@ -20,8 +26,36 @@ AstVariableDecl* ast_element_cast<AstVariableDecl>(AstElement* source)
 }
 
 
+template<>
+AstExpr* ast_element_cast<AstExpr>(AstElement* source)
+{
 
+	if (CAST_CONDITION(source, AstElement::ElementType::EXPR))
+		return reinterpret_cast<AstExpr*>(source);
+	return nullptr;
+}
 
+template<>
+AstStatement* ast_element_cast<AstStatement>(AstElement* source)
+{
+	if (CAST_CONDITION(source, AstElement::ElementType::STATEMENT))
+		return reinterpret_cast<AstStatement*>(source);
+	return nullptr;
+}
 
+template<>
+AstConst* ast_element_cast<AstConst>(AstElement* source)
+{
+	if (CAST_CONDITION(source, AstElement::ElementType::CONST_))
+		return reinterpret_cast<AstConst*>(source);
+	return nullptr;
+}
+template<>
+AstRef* ast_element_cast<AstRef>(AstElement* source)
+{
+	if (CAST_CONDITION(source, AstElement::ElementType::REFERENCE))
+		return reinterpret_cast<AstRef*>(source);
+	return nullptr;
+}
 #undef CAST_CONDITION
 

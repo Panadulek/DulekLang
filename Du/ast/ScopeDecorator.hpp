@@ -19,6 +19,7 @@ namespace ScopeDecorator
 		Function(Function&&) = delete;
 		bool isProcedure() { return m_retType == BasicTypes::VOID_TYPE; }
 		bool hasRetType() { return !isProcedure(); }
+		BasicTypes getRetType() { return m_retType; }
 		std::span<std::unique_ptr<AstElement>> getArgs() { return m_args; }
 		std::size_t getArgsCounter() { return m_args.size(); }
 	};

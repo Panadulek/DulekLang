@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-enum class BasicTypes : uint8_t
+enum class BasicTypes : uint64_t
 {
 	I8,
 	I16,
@@ -13,4 +13,5 @@ enum class BasicTypes : uint8_t
 	F32,
 	F64,
 	VOID_TYPE,
+
 };

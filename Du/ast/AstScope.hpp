@@ -10,6 +10,9 @@
 
 #include "BasicType.hpp"
 #include "ScopeDecorator.hpp"
+#include "AstCast.hpp"
+
+#include <optional>
 
 class AstScope final : public AstElement
 {
@@ -18,7 +21,7 @@ class AstScope final : public AstElement
 	class Global;
 
 	std::vector<std::unique_ptr<AstElement>> m_elements;
-	AstElement* m_parent;
+	
 	std::unique_ptr<Function> m_function;
 	
 	template<typename Container, typename Predicate>
@@ -58,8 +61,42 @@ public:
 	explicit AstScope(std::string_view name, AstElement* parent);
 	AstElement* addElement(std::unique_ptr<AstElement>&& element);
 	std::span<std::unique_ptr<AstElement>> getElements();
-	AstElement* getParent() const { return m_parent; }
+	AstElement* getParent() const { return AstElement::getParent(); }
+	AstElement* getElement(std::string_view id)
+	{
+		for (auto& it : m_elements)
+		{
+			if (it->getName() == id)
+				return it.get();
+		}
+		AstElement* ret = nullptr;
+		if (getParent())
+		{
+			AstScope* parentScope = ast_element_cast<AstScope>(getParent());
+			return parentScope->getElement(id);
+		}
+		return nullptr;
+			
+	}
 	std::size_t getElementsCounter() const { return m_elements.size(); }
+
+	std::optional<BasicTypes> getScopeType()
+	{
+		std::optional<BasicTypes> ret;
+		if (m_function)
+		{
+			if (m_function->hasRetType())
+			{
+				ret = std::make_optional(m_function->getRetType());
+			}
+			else
+			{
+				ret = std::make_optional(BasicTypes::VOID_TYPE);
+			}
+		}
+		return ret;
+	}
+
 	struct GlobalApi
 	{
 		static bool addFile(std::string_view filename);
