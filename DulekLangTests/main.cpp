@@ -12,6 +12,7 @@
 #include "AstScopeTests.h"
 #include "CastTest.h"
 #include "AstBuilderTest.h"
+#include "AllocatorTest.h"
 
 void attach()
 {

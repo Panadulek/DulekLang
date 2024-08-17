@@ -5,10 +5,9 @@
 #include "../ast/AstElement.hpp"
 #include <format>
 #include "../ast/AstCast.hpp"
+#include "../allocators/allocator.hpp"
 
-
-
-
+ 
 template<typename Allocator = std::allocator<std::pair<const std::string, llvm::Value*>>>
 class LlvmCache
 {
@@ -42,7 +41,7 @@ public:
 		std::string_view ast_type_hash = gen_ast_type_hash(element->getAstType());
 		std::string_view ast_scope_name = element->getParent() ? element->getParent()->getName() : "null";
 		std::string_view ast_scope_hash = element->getParent() ? gen_ast_type_hash(element->getParent()->getAstType()) : "null";
-		return concatenation(element->getName(), ast_type_hash, ast_scope_name, ast_scope_name);
+		return concatenation(element->getName(), ast_type_hash, ast_scope_name, ast_scope_hash);
 	}
 
 	void insertElement(llvm::Value* val, AstElement* element)
@@ -66,7 +65,7 @@ public:
 	}
 };
 
-template<typename Allocator = std::allocator<std::pair<const std::string, llvm::Value*>>>
+template<typename Allocator =SlabAllocator<std::pair<const std::string, llvm::Value*>, 1024>>
 LlvmCache<Allocator>& getLlvmCache()
 {
 	static LlvmCache<Allocator> ret;

@@ -11,6 +11,8 @@
 #include <iostream>
 #include "../ast/AstConst.hpp"
 
+#include "../ast/AstList.hpp"
+#include "../ast/AstCallFun.hpp"
 
 #include "../llvm_gen/llvm_generator.h"
 #include "../llvm_gen/llvm_output_process.h"

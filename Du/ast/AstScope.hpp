@@ -48,9 +48,9 @@ class AstScope final : public AstElement
 
 
 
-	void setUpFunction(BasicTypes retType, std::vector<std::unique_ptr<AstElement>>&& args)
+	void setUpFunction(BasicTypes retType, std::vector<std::unique_ptr<AstElement>>* args)
 	{
-		m_function = std::make_unique<Function>(retType, std::move(args));
+		m_function = std::make_unique<Function>(retType, std::move(*args), this);
 	}
 
 
@@ -62,6 +62,7 @@ public:
 	AstElement* addElement(std::unique_ptr<AstElement>&& element);
 	std::span<std::unique_ptr<AstElement>> getElements();
 	AstElement* getParent() const { return AstElement::getParent(); }
+	Function* getFunctionDecorator() const { return m_function.get(); }
 	AstElement* getElement(std::string_view id)
 	{
 		for (auto& it : m_elements)
@@ -101,7 +102,7 @@ public:
 	{
 		static bool addFile(std::string_view filename);
 		static std::pair<bool, BasicTypes> isBasicType(std::string_view tname);
-		static AstScope* getCurrentScope();
+		static AstScope* getCurrentGlobalScope();
 		static AstScope* getGlobalScopeForFile(std::string_view filename);
 	private: //function used only for unit tests project
 		static void clearGlobalScopes();

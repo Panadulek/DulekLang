@@ -54,6 +54,6 @@ add_dependencies(DulekLangTests googletest)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET DulekLangTests PROPERTY CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
-
 

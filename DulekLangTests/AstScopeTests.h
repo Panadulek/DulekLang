@@ -14,6 +14,7 @@ public:
 
 	static bool TestAstScopeGlobalApiAddFile()
 	{
+		
 		bool ret = AstScope::GlobalApi::addFile("file1.du");
 		GlobalApi::clearGlobalScopes();
 		return ret;
@@ -48,8 +49,7 @@ public:
 	{
 		const std::string filename = "file.du";
 		bool ret = GlobalApi::addFile(filename);
-		AstBuildSystem::Instance().provideNextFilename(filename);
-		auto newScope = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("scope", AstScope::GlobalApi::getCurrentScope());
+		auto newScope = AstBuildSystem::Instance().getFactory().scopeFactor().createScope("scope", AstBuildSystem::Instance().getBuilder().getActualScope());
 		auto ptrScope = newScope.get();
 		AstBuildSystem::Instance().getBuilder().addElement(std::move(newScope));
 		return AstBuildSystem::Instance().getBuilder().getActualScope() == ptrScope;

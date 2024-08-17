@@ -35,7 +35,7 @@
 /* "%code requires" blocks.  */
 
 /* Line 1676 of yacc.c  */
-#line 24 "E:/LocalRepo/Compilers/DulekLang/Du/parser/parser.y"
+#line 24 "parser/parser.y"
 
     #include "../ast/AstBuildSystem.hpp"
     #include "../ast/AstElement.hpp"
@@ -68,16 +68,18 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 33 "E:/LocalRepo/Compilers/DulekLang/Du/parser/parser.y"
+#line 33 "parser/parser.y"
 
     int intval;
     AstElement* astval;
+    AstList* astlist;
     char* strval;
+    ScopeDecorator::Function::CONTAINER* scopeInputList;
 
 
 
 /* Line 1676 of yacc.c  */
-#line 81 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 83 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

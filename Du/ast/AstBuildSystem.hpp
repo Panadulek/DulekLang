@@ -9,9 +9,10 @@ class AstBuildSystem
 	AstFactory m_factory;
 	AstBuildSystem() : m_builder(nullptr)
 	{}
+	
 public:
-
 	void provideNextFilename(std::string_view filename) { m_builder.reset(new AstBuilder(filename)); }
+	
 	AstFactory& getFactory() { return m_factory; }
 	AstBuilder& getBuilder() { return *m_builder; }
 	static AstBuildSystem& Instance()

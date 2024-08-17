@@ -10,7 +10,7 @@ class AstStatement : public AstElement
 	{
 		EMPTY_STMT = 0,
 		ASSIGN,
-		CALL_FUN,
+		RHS_STMT,
 	};
 	const TYPE m_stmtType;
 public:

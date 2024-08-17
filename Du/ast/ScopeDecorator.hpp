@@ -1,26 +1,35 @@
-
+#pragma once
 #include <memory>;
 #include "BasicType.hpp"
 #include <vector>;
 #include "AstElement.hpp"
 #include "span"
+#include "AstList.hpp"
+
+
 namespace ScopeDecorator
 {
 	class Function
 	{
 	private:
+		using _CONTAINER = std::vector<std::unique_ptr<AstElement>>;
 		BasicTypes m_retType;
-		std::vector<std::unique_ptr<AstElement>>&& m_args;
+		_CONTAINER&& m_args;
+		AstScope* m_ptrToScope;
 	public:
-		Function(BasicTypes retType, std::vector<std::unique_ptr<AstElement>>&& args) : m_retType(retType), m_args(std::move(args))
+		using CONTAINER = _CONTAINER;
+		Function(BasicTypes retType, std::vector<std::unique_ptr<AstElement>>&& args, AstScope* scope) : m_retType(retType), m_args(std::move(args)), m_ptrToScope(scope)
 		{}
 		Function() = delete;
 		Function(Function&) = delete;
 		Function(Function&&) = delete;
-		bool isProcedure() { return m_retType == BasicTypes::VOID_TYPE; }
-		bool hasRetType() { return !isProcedure(); }
-		BasicTypes getRetType() { return m_retType; }
-		std::span<std::unique_ptr<AstElement>> getArgs() { return m_args; }
-		std::size_t getArgsCounter() { return m_args.size(); }
+		
+		bool isProcedure() const;
+		bool hasRetType() const;
+		BasicTypes getRetType() const;
+		std::span<std::unique_ptr<AstElement>> getArgs() const;
+		std::size_t getArgsCounter() const;
+		std::string_view getFunName() const;
+		const AstScope* getFun() const;
 	};
 };

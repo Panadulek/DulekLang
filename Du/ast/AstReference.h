@@ -15,6 +15,13 @@ public:
 		{
 			return decl->getVarType();
 		}
+		else if (AstScope* scope = ast_element_cast<AstScope>(m_ref))
+		{
+			if (ScopeDecorator::Function* fun = scope->getFunctionDecorator())
+			{
+				return fun->getRetType();
+			}
+		}
 		return std::nullopt;
 	}
 	std::string_view getName() { return m_ref->getName(); }

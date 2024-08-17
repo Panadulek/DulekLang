@@ -9,7 +9,7 @@ struct AstBuilderTest
 	{
 		const std::string fname("addScopesElement.du");
 		AstScope::GlobalApi::addFile(fname);
-		AstBuilder builder(fname);
+		AstBuilder& builder = AstBuildSystem::Instance().getBuilder();
 		builder.addElement(AstBuildSystem::Instance().getFactory().scopeFactor().createScope("fun1", builder.getActualScope()));
 		constexpr std::size_t sizeInFun = 2;
 		
@@ -23,7 +23,7 @@ struct AstBuilderTest
 	{
 		const std::string fname("addScopesElement.du");
 		AstScope::GlobalApi::addFile(fname);
-		AstBuilder builder(fname);
+		AstBuilder& builder = AstBuildSystem::Instance().getBuilder();
 		builder.addElement(AstBuildSystem::Instance().getFactory().scopeFactor().createScope("fun1", builder.getActualScope()));
 		constexpr std::size_t sizeInFun = 2;
 		builder.addElement(AstBuildSystem::Instance().getFactory().varFactor().createVariable("u8", "var1", nullptr));

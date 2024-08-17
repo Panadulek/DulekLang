@@ -19,6 +19,8 @@ public:
 		EXPR,
 		STATEMENT,
 		REFERENCE,
+		AST_LIST,
+		CALL_FUN,
 	};
 private:
 	std::string m_name;

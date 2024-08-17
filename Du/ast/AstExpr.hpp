@@ -16,6 +16,7 @@ public:
 			Unary_negation,
 			ConstValue,
 			Reference,
+			Call_fun,
 		};
 private:
 	bool isDeleteable(AstElement* toDelete)
@@ -26,6 +27,7 @@ private:
 		case AstElement::ElementType::REFERENCE:
 		case AstElement::ElementType::CONST_:
 		case AstElement::ElementType::EXPR:
+		case AstElement::ElementType::CALL_FUN:
 			return true;
 		default:
 			return false;

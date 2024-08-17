@@ -8,7 +8,7 @@
 #include <stack>
 #include "BasicType.hpp"
 #include "AstBuildSystem.hpp"
-
+#include <string_view>
 
 
 /*
@@ -53,6 +53,9 @@ private:
 		if (iterator == m_connectFileWithGlobalScope.end())
 		{
 			m_connectFileWithGlobalScope.insert({ filename, AstBuildSystem::Instance().getFactory().scopeFactor().createScope("", nullptr)});
+			m_currentFile = filename;
+			AstBuildSystem::Instance().provideNextFilename(m_currentFile);
+			AstBuildSystem::Instance().getBuilder().beginScope(m_connectFileWithGlobalScope.find(filename)->second.get());
 			return true;
 		}
 		return false;
@@ -155,7 +158,7 @@ bool AstScope::GlobalApi::addFile(std::string_view filename)
 {
 	return AstScope::getGlobal().addFile(filename);
 }
-AstScope* AstScope::GlobalApi::getCurrentScope()
+AstScope* AstScope::GlobalApi::getCurrentGlobalScope()
 {
 	return AstScope::getGlobal().getCurrentGlobalScope();
 }

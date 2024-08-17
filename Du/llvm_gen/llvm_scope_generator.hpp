@@ -10,6 +10,7 @@ class LlvmScopeGenerator
 	llvm::Function* processFunction(AstScope* scope, llvm::Type* type, llvm::IRBuilder<>& b, std::unique_ptr<llvm::Module>& m)
 	{
 		auto function = llvm::Function::Create(llvm::FunctionType::get(type, false), llvm::GlobalValue::PrivateLinkage, scope->getName(), *m);
+		getLlvmCache<>().insertElement(function, scope);
 		auto bb = llvm::BasicBlock::Create(getContext(), "entry", function);
 		b.SetInsertPoint(bb);
 		auto elements = scope->getElements();

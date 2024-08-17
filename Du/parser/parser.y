@@ -10,8 +10,8 @@ extern "C" int yywrap();
 #include "../ast/AstElement.hpp"
 #include "../ast/AstBuildSystem.hpp"
 #include "../ast/BasicType.hpp"
+#include "../ast/AstList.hpp"
 #include<iostream>
-static std::vector<std::unique_ptr<AstElement>> m_AstElementList;
 AstScope* getActualScope()
 {
    return AstBuildSystem::Instance().getBuilder().getActualScope();
@@ -33,7 +33,9 @@ using AstPtr = std::unique_ptr<AstElement>;
 %union {
     int intval;
     AstElement* astval;
+    AstList* astlist;
     char* strval;
+    ScopeDecorator::Function::CONTAINER* scopeInputList;
 }
 
 %token ARROW_TOKEN
@@ -44,8 +46,8 @@ using AstPtr = std::unique_ptr<AstElement>;
 %left '*' '/'
 
 %type <astval> expr decl_expr decl_fun decl_fun_header stmt
-
-
+%type <astlist> expr_list 
+%type <scopeInputList>decl_expr_list
 %start program
 
 %%
@@ -71,14 +73,11 @@ stmt:
     }
     | expr ';'
     {
-       int a = 5;
-       a += 3;
+        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createStmt($1);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
     }
     | decl_fun
-    {
-        AstPtr ptr($1);
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(ptr));
-    }
+    
 ;
 
 stmt_list:
@@ -119,25 +118,72 @@ expr:
     | ID_TOKEN
     {
         $$ = AstBuildSystem::Instance().getFactory().varFactor().createRef($1);
+        free($1);
+    }
+    | ID_TOKEN '(' expr_list ')'
+    {
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1,  getActualScope(), $3);
+        free($1);
+    }
+    | ID_TOKEN '(' ')'
+    {
+        
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1,  getActualScope(), nullptr);
+        free($1);
     }
 ;
 
-
+expr_list:
+    |
+    expr {
+        $$ = new AstArgs();
+        $$->push($1);
+    }
+    | expr_list ',' expr
+    {
+        $$->push($3);
+    }
+    ;
 decl_expr:
     ID_TOKEN ID_TOKEN
     {
         auto var = AstBuildSystem::Instance().getFactory(). varFactor().createVariable($1, $2, getActualScope()).release();
         $$ = var;
+        free($1);
+        free($2);
     }
 ;
 
 
+decl_expr_list:
+    decl_expr
+    {
+        $$ = new ScopeDecorator::Function::CONTAINER();
+        $$->emplace_back($1);
+    }
+    | decl_expr_list ',' decl_expr
+    {
+        $$->emplace_back($3);
+    }
+    ;
+
 decl_fun_header: 
     ID_TOKEN '('  ')' ARROW_TOKEN ID_TOKEN 
     {
-        auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $5, m_AstElementList).release();
-        AstBuildSystem::Instance().getBuilder().beginScope(fun);
-        $$ = fun;  // U¿ywasz tutaj AstElement*
+        auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $5, nullptr);
+        auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
+        AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
+        $$ = funRawPtr;  // U¿ywasz tutaj AstElement*
+        free($1);
+    } 
+    |
+    ID_TOKEN '(' decl_expr_list ')' ARROW_TOKEN ID_TOKEN 
+    {
+        auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $6, $3);
+        auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
+        AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
+        $$ = funRawPtr;  // U¿ywasz tutaj AstElement*
+        free($1);
     } 
 ;
     

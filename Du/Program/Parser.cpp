@@ -47,7 +47,6 @@ void Parser::parse()
 	if (isOpenFile)
 	{
 		AstScope::GlobalApi::addFile(m_currentFileName);
-		AstBuildSystem::Instance().provideNextFilename(m_currentFileName);
 		AstBuildSystem::Instance().getBuilder().beginScope(AstScope::GlobalApi::getGlobalScopeForFile(m_currentFileName));
 		ret = m_pimpl->parse();
 	}

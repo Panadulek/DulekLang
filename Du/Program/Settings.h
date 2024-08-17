@@ -9,7 +9,7 @@
 
 
 #ifdef _DEBUG
-	#define DU_YYDEBUG false
+	#define DU_YYDEBUG true
 #endif
 
 

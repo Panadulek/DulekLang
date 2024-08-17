@@ -57,5 +57,9 @@ AstRef* ast_element_cast<AstRef>(AstElement* source)
 		return reinterpret_cast<AstRef*>(source);
 	return nullptr;
 }
+
+
+
+
 #undef CAST_CONDITION
 

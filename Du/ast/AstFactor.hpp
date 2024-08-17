@@ -10,7 +10,7 @@
 #include "AstStatement.hpp"
 #include "AstConst.hpp"
 #include "AstReference.h"
-
+#include "AstCallFun.hpp"
 extern AstScope* getActualScope();
 
 class AstBuildSystem;
@@ -20,8 +20,8 @@ class AstFactory
 	struct ScopeFactor
 	{
 		std::unique_ptr<AstScope> createScope(std::string_view scopeName, AstElement* parent);
-		std::unique_ptr<AstScope> createFunction(std::string_view name, AstElement* parent, std::string_view retType, std::vector<std::unique_ptr<AstElement>>& args);
-		std::unique_ptr<AstScope> createFunction(std::string_view name, std::string_view retType, std::vector<std::unique_ptr<AstElement>>& args);
+		std::unique_ptr<AstScope> createFunction(std::string_view name, AstElement* parent, std::string_view retType, std::vector<std::unique_ptr<AstElement>>* args);
+		std::unique_ptr<AstScope> createFunction(std::string_view name, std::string_view retType, std::vector<std::unique_ptr<AstElement>>* args);
 	};
 
 
@@ -46,6 +46,20 @@ class AstFactory
 		AstConst* createUnsignedConst(uint64_t val)
 		{
 			return new AstConst(val);
+		}
+		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
+		{
+			AstElement* element = beginContainer->getElement(funName);
+			if (AstScope* scope = ast_element_cast<AstScope>(element))
+			{
+				if (scope->getFunctionDecorator())
+				{
+					AstElement* callFun = new AstCallFun(dynamic_cast<AstArgs*>(args), scope);
+					return new AstExpr(callFun, AstExpr::Operation::Call_fun, args);
+					
+				}
+				// TO_DO ERRORS
+			}
 		}
 	};
 	struct VariableFactor
@@ -84,6 +98,16 @@ class AstFactory
 				}
 			}
 			return nullptr;
+		}
+		std::unique_ptr<AstElement> createStmt(AstElement* rhs)
+		{
+			if (rhs)
+			{
+				if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
+				{
+					return std::make_unique<AstStatement>(rhs, nullptr, AstStatement::STMT_TYPE::RHS_STMT);
+				}
+			}
 		}
 	};
 

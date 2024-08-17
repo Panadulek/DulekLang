@@ -29,7 +29,7 @@ add_library(DuAst STATIC
     ast/AstVariableDecl.cpp
     ast/AstCast.cpp
     ast/AstUniqueCast.cpp
- "ast/AstBuilder.hpp"  "ast/AstCast.hpp"  "ast/ScopeDecorator.hpp" "ast/BasicType.hpp"  "ast/AstFactor.cpp" "ast/AstStatement.cpp" "ast/AstReference.h")
+ "ast/AstBuilder.hpp"  "ast/AstCast.hpp"  "ast/ScopeDecorator.hpp" "ast/BasicType.hpp"  "ast/AstFactor.cpp" "ast/AstStatement.cpp" "ast/AstReference.h" "ast/ScopeDecorator.cpp")
 
 # Dodaj wykonywalny cel projektu
 add_executable (Du
@@ -52,6 +52,7 @@ set_target_properties(DuAst PROPERTIES
 if (CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET DuAst PROPERTY CXX_STANDARD 20)
     set_property(TARGET Du PROPERTY CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 add_definitions(-DNOMINMAX)

@@ -373,9 +373,9 @@ static char *yy_last_accepting_cpos;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 1 "lexer/scanner.l"
 #define INITIAL 0
-#line 2 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 2 "lexer/scanner.l"
 #include "parser.hpp"
 #include <string>
 #ifdef _WIN32
@@ -534,7 +534,7 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
 
-#line 12 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 12 "lexer/scanner.l"
 
 
 
@@ -623,7 +623,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 15 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 15 "lexer/scanner.l"
 { 
 yylval.strval = strdup(yytext);
 return ID_TOKEN;
@@ -631,82 +631,82 @@ return ID_TOKEN;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 19 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 19 "lexer/scanner.l"
 { yylval.intval =  std::stoull(yytext);  return NUMBER_TOKEN; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 21 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 21 "lexer/scanner.l"
 { return '+'; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 22 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 22 "lexer/scanner.l"
 { return '-'; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 23 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 23 "lexer/scanner.l"
 { return '*'; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 24 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 24 "lexer/scanner.l"
 { return '/'; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 25 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 25 "lexer/scanner.l"
 { return '('; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 26 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 26 "lexer/scanner.l"
 { return ')'; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 27 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 27 "lexer/scanner.l"
 {return ';';}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 28 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 28 "lexer/scanner.l"
 {return ARROW_TOKEN;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 29 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 29 "lexer/scanner.l"
 {return ',';}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 30 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 30 "lexer/scanner.l"
 {return '{';}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 31 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 31 "lexer/scanner.l"
 {return '}';}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 32 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 32 "lexer/scanner.l"
 {return '=';}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 33 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 33 "lexer/scanner.l"
 { /* Ignoruj bia³e znaki */ }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 34 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 34 "lexer/scanner.l"
 {  }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 36 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 36 "lexer/scanner.l"
 ECHO;
 	YY_BREAK
 #line 713 "E:/LocalRepo/Compilers/DulekLang/Du/gen/scanner.cpp"
@@ -1595,7 +1595,7 @@ int main()
 	return 0;
 	}
 #endif
-#line 36 "E:/LocalRepo/Compilers/DulekLang/Du/lexer/scanner.l"
+#line 36 "lexer/scanner.l"
 
 
 int yywrap() {

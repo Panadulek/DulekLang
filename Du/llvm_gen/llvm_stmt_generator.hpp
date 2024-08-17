@@ -8,7 +8,9 @@
 #include "../ast/AstCast.hpp"
 #include "../ast/AstConst.hpp"
 #include "../ast/AstReference.h"
+#include "../ast/AstCast.hpp"
 #include <format>
+#include "../ast/AstCallFun.hpp"
 #include "llvm_cache.hpp"
 class llvmStmtGenerator
 {
@@ -52,6 +54,21 @@ class llvmStmtGenerator
 			llvm::Value* variable = getLlvmCache<>().getValue(ref);
 			return b.CreateLoad(LlvmTypeGenerator::convertAstToLlvmType(ref->getType().value()), variable, std::format("Load from: {}", ref->getName()));
 		}
+		else if (AstCallFun* callFn = dynamic_cast<AstCallFun*>(element))
+		{
+			llvm::Value* fun = getLlvmCache<>().getValue(const_cast<AstScope*>(callFn->getScope()));
+			if (llvm::Function* llvmFun = llvm::dyn_cast<llvm::Function>(fun))
+			{
+				std::string comment = std::format("call {}", callFn->getName());
+				std::vector<llvm::Value*> args;
+				return b.CreateCall(llvmFun, {}, comment);
+				
+			}
+		}
+		return nullptr;
+	}
+	static llvm::Value* generateCallFun(AstElement* element, llvm::IRBuilder<>& b)
+	{
 		return nullptr;
 	}
 	static llvm::Value* generateExprInstruction(AstExpr* expr, llvm::IRBuilder<>& b)
@@ -72,6 +89,8 @@ class llvmStmtGenerator
 			return b.CreateSDiv(l, r, std::format("SDiv {} and {} ", expr->left()->getName(), expr->right()->getName()));
 		case AstExpr::Operation::Unary_negation:
 			return b.CreateNeg(l, std::format("Neg {}", expr->left()->getName()));
+		case AstExpr::Operation::Call_fun:
+			return l;
 		default:
 			break;
 		}
@@ -87,6 +106,18 @@ class llvmStmtGenerator
 			b.CreateStore(exprInstruction, variable, false);
 		}
 	}
+
+	static llvm::Value* generateRhsInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
+	{
+		if(stmt)
+			if (AstExpr* expr = ast_element_cast<AstExpr>(stmt->lhs()))
+			{
+				return generateExprInstruction(expr, b);
+			}
+		return nullptr;
+	}
+	
+
 public:
 	static void generateInstruction(AstElement* stmt, llvm::IRBuilder<>& b)
 	{
@@ -100,6 +131,9 @@ public:
 			{
 			case AstStatement::STMT_TYPE::ASSIGN:
 				generateAssgnInstruction(_stmt, b);
+				break;
+			case AstStatement::STMT_TYPE::RHS_STMT:
+				generateRhsInstruction(ast_element_cast<AstStatement>(stmt), b);
 				break;
 			}
 			return ;
