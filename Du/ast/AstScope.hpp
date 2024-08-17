@@ -48,9 +48,9 @@ class AstScope final : public AstElement
 
 
 
-	void setUpFunction(BasicTypes retType, std::vector<std::unique_ptr<AstElement>>* args)
+	void setUpFunction(BasicTypes retType, Function::CONTAINER* args)
 	{
-		m_function = std::make_unique<Function>(retType, std::move(*args), this);
+		m_function = std::make_unique<Function>(retType, args, this);
 	}
 
 
@@ -69,6 +69,15 @@ public:
 		{
 			if (it->getName() == id)
 				return it.get();
+		}
+		if (m_function &&  m_function->hasArgs())
+		{
+			auto args = m_function->getArgs();
+			for (auto& it : args)
+			{
+				if (it->getName() == id)
+					return it;
+			}
 		}
 		AstElement* ret = nullptr;
 		if (getParent())

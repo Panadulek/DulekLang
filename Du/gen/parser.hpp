@@ -56,8 +56,9 @@
       know about them.  */
    enum yytokentype {
      ARROW_TOKEN = 258,
-     ID_TOKEN = 259,
-     NUMBER_TOKEN = 260
+     RET_STMT = 259,
+     ID_TOKEN = 260,
+     NUMBER_TOKEN = 261
    };
 #endif
 
@@ -79,7 +80,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 83 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 84 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

@@ -11,6 +11,7 @@ class AstStatement : public AstElement
 		EMPTY_STMT = 0,
 		ASSIGN,
 		RHS_STMT,
+		RET_STMT,
 	};
 	const TYPE m_stmtType;
 public:

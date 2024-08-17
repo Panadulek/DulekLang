@@ -6,8 +6,8 @@
 #include <format>
 #include "../ast/AstCast.hpp"
 #include "../allocators/allocator.hpp"
+#include <cassert>
 
- 
 template<typename Allocator = std::allocator<std::pair<const std::string, llvm::Value*>>>
 class LlvmCache
 {
@@ -34,7 +34,7 @@ class LlvmCache
 	{
 		return std::format("_{}_{}_{}_{}_", parent_scope_ast, parent_scope_name, ast_type_name, name);
 	}
-	
+
 public:
 	std::string hashElement(AstElement* element)
 	{
@@ -47,7 +47,10 @@ public:
 	void insertElement(llvm::Value* val, AstElement* element)
 	{
 		std::string hash = hashElement(element);
-		m_val.insert({hash, val});
+		llvm::Value* found = getValue(element);
+		if (!found)
+			m_val.insert({ hash, val });
+	
 	}
 
 	llvm::Value* getValue(AstElement* element)
@@ -60,12 +63,12 @@ public:
 		{
 			std::string hash = hashElement(element);
 			auto ret = m_val.find(hash);
-			return ret->second;
+			return (ret == m_val.end()) ? nullptr : ret->second;
 		}
 	}
 };
 
-template<typename Allocator =SlabAllocator<std::pair<const std::string, llvm::Value*>, 1024>>
+template<typename Allocator = std::allocator<std::pair<const std::string, llvm::Value*>>>
 LlvmCache<Allocator>& getLlvmCache()
 {
 	static LlvmCache<Allocator> ret;

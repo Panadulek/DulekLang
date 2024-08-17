@@ -52,7 +52,10 @@ class llvmStmtGenerator
 		else if (AstRef* ref = ast_element_cast<AstRef>(element))
 		{
 			llvm::Value* variable = getLlvmCache<>().getValue(ref);
-			return b.CreateLoad(LlvmTypeGenerator::convertAstToLlvmType(ref->getType().value()), variable, std::format("Load from: {}", ref->getName()));
+			if(variable->getType()->isPointerTy())
+				return b.CreateLoad(LlvmTypeGenerator::convertAstToLlvmType(ref->getType().value()), variable, std::format("Load from: {}", ref->getName()));
+			return
+				variable;
 		}
 		else if (AstCallFun* callFn = dynamic_cast<AstCallFun*>(element))
 		{
@@ -60,8 +63,14 @@ class llvmStmtGenerator
 			if (llvm::Function* llvmFun = llvm::dyn_cast<llvm::Function>(fun))
 			{
 				std::string comment = std::format("call {}", callFn->getName());
-				std::vector<llvm::Value*> args;
-				return b.CreateCall(llvmFun, {}, comment);
+				std::vector<llvm::Value*> llvm_args;
+				auto args = callFn->getArgs();
+				for (auto& it : args)
+				{
+					if (AstExpr* expr = ast_unique_element_cast<AstExpr>(it))
+						llvm_args.push_back(generateExprInstruction(expr, b));
+				}
+				return b.CreateCall(llvmFun, llvm_args, comment);
 				
 			}
 		}
@@ -81,8 +90,9 @@ class llvmStmtGenerator
 			return b.CreateAdd(l, r, std::format("add {} and {}", expr->left()->getName(), expr->right()->getName()));
 		case AstExpr::Operation::Subtraction:
 			return b.CreateSub(l, r, std::format("Sub {} and {} ", expr->left()->getName(), expr->right()->getName()));
+		case AstExpr::Operation::Reference:
 		case AstExpr::Operation::ConstValue:
-			return l;
+			return r;
 		case AstExpr::Operation::Multiplication:
 			return b.CreateMul(l, r, std::format("Mul {} and {} ", expr->left()->getName(), expr->right()->getName()));
 		case AstExpr::Operation::Division:
@@ -110,13 +120,21 @@ class llvmStmtGenerator
 	static llvm::Value* generateRhsInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
 	{
 		if(stmt)
-			if (AstExpr* expr = ast_element_cast<AstExpr>(stmt->lhs()))
+			if (AstExpr* expr = ast_element_cast<AstExpr>(stmt->rhs()))
 			{
 				return generateExprInstruction(expr, b);
 			}
 		return nullptr;
 	}
 	
+	static llvm::Value* generateRetInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
+	{
+		llvm::Value* retVal = generateRhsInstruction(stmt, b);
+		if (retVal)
+		{
+			return b.CreateRet(retVal);
+		}
+	}
 
 public:
 	static void generateInstruction(AstElement* stmt, llvm::IRBuilder<>& b)
@@ -135,6 +153,11 @@ public:
 			case AstStatement::STMT_TYPE::RHS_STMT:
 				generateRhsInstruction(ast_element_cast<AstStatement>(stmt), b);
 				break;
+			case AstStatement::STMT_TYPE::RET_STMT:
+				{
+					llvm::Value* retVal = generateRetInstruction(ast_element_cast<AstStatement>(stmt), b);
+					break;
+				}
 			}
 			return ;
 		}

@@ -11,6 +11,9 @@
 
 %%
 
+"return" {
+return RET_STMT;
+}
 
 [a-zA-Z_][a-zA-Z0-9_]*  { 
 yylval.strval = strdup(yytext);
@@ -30,8 +33,11 @@ return ID_TOKEN;
 "{" {return '{';}
 "}" {return '}';}
 "=" {return '=';}
+
 [ \t\n]+ { /* Ignoruj bia³e znaki */ }
 .       {  }
+
+
 
 %%
 

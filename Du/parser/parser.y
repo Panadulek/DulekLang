@@ -38,7 +38,7 @@ using AstPtr = std::unique_ptr<AstElement>;
     ScopeDecorator::Function::CONTAINER* scopeInputList;
 }
 
-%token ARROW_TOKEN
+%token ARROW_TOKEN RET_STMT
 %token<strval> ID_TOKEN
 %token<intval> NUMBER_TOKEN
 %debug
@@ -76,8 +76,13 @@ stmt:
         AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createStmt($1);
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
     }
+    | RET_STMT expr ';'
+    {
+        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createRetStmt($2);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
+    }
     | decl_fun
-    
+     
 ;
 
 stmt_list:
@@ -117,7 +122,7 @@ expr:
     }
     | ID_TOKEN
     {
-        $$ = AstBuildSystem::Instance().getFactory().varFactor().createRef($1);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createRef($1);
         free($1);
     }
     | ID_TOKEN '(' expr_list ')'

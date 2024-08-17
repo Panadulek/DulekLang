@@ -20,8 +20,8 @@ class AstFactory
 	struct ScopeFactor
 	{
 		std::unique_ptr<AstScope> createScope(std::string_view scopeName, AstElement* parent);
-		std::unique_ptr<AstScope> createFunction(std::string_view name, AstElement* parent, std::string_view retType, std::vector<std::unique_ptr<AstElement>>* args);
-		std::unique_ptr<AstScope> createFunction(std::string_view name, std::string_view retType, std::vector<std::unique_ptr<AstElement>>* args);
+		std::unique_ptr<AstScope> createFunction(std::string_view name, AstElement* parent, std::string_view retType, ScopeDecorator::Function::CONTAINER* args);
+		std::unique_ptr<AstScope> createFunction(std::string_view name, std::string_view retType, ScopeDecorator::Function::CONTAINER* args);
 	};
 
 
@@ -43,9 +43,17 @@ class AstFactory
 		{
 			return new AstExpr(left, AstExpr::Operation::Division, right);
 		}
-		AstConst* createUnsignedConst(uint64_t val)
+		AstExpr* createUnsignedConst(uint64_t val)
 		{
-			return new AstConst(val);
+			return  new AstExpr(nullptr, AstExpr::Operation::ConstValue, new AstConst(val));
+		}
+		AstExpr* createRef(std::string_view name)
+		{
+			if (!name.data())
+				return nullptr;
+			AstScope* scope = getActualScope();
+			AstElement* element = scope->getElement(name);
+			return new AstExpr(nullptr, AstExpr::Operation::Reference, new AstRef(element));
 		}
 		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
 		{
@@ -72,14 +80,7 @@ class AstFactory
 			return std::make_unique<AstVariableDecl>(isBuiltInType.second, idname, parent);
 		}
 
-		AstRef* createRef(std::string_view name)
-		{
-			if(!name.data())
-				return nullptr;
-			AstScope* scope = getActualScope();
-			AstElement* element = scope->getElement(name);
-			return new AstRef(element);
-		}
+
 
 	};
 
@@ -99,13 +100,25 @@ class AstFactory
 			}
 			return nullptr;
 		}
+		
 		std::unique_ptr<AstElement> createStmt(AstElement* rhs)
 		{
 			if (rhs)
 			{
 				if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
 				{
-					return std::make_unique<AstStatement>(rhs, nullptr, AstStatement::STMT_TYPE::RHS_STMT);
+					return std::make_unique<AstStatement>(nullptr, expr, AstStatement::STMT_TYPE::RHS_STMT);
+				}
+			}
+		}
+
+		std::unique_ptr<AstElement> createRetStmt(AstElement* rhs)
+		{
+			if (rhs)
+			{
+				if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
+				{
+					return std::make_unique<AstStatement>(nullptr, expr, AstStatement::STMT_TYPE::RET_STMT);
 				}
 			}
 		}
