@@ -84,21 +84,28 @@ class llvmStmtGenerator
 	{
 		llvm::Value* l = getValueFromExpr(expr->left(), b);
 		llvm::Value* r = getValueFromExpr(expr->right(), b);
+		std::string description =
+#ifdef _DEBUG
+			std::format("{}, {} and {}", static_cast<uint8_t>(expr->op()), expr->left() ? expr->left()->getName() : "null", 
+				expr->right() ? expr->right()->getName() : "null");
+#else
+			"";
+#endif
 		switch (expr->op())
 		{
 		case AstExpr::Operation::Addition:
-			return b.CreateAdd(l, r, std::format("add {} and {}", expr->left()->getName(), expr->right()->getName()));
+			return b.CreateAdd(l, r, description);
 		case AstExpr::Operation::Subtraction:
-			return b.CreateSub(l, r, std::format("Sub {} and {} ", expr->left()->getName(), expr->right()->getName()));
+			return b.CreateSub(l, r, description);
 		case AstExpr::Operation::Reference:
 		case AstExpr::Operation::ConstValue:
 			return r;
 		case AstExpr::Operation::Multiplication:
-			return b.CreateMul(l, r, std::format("Mul {} and {} ", expr->left()->getName(), expr->right()->getName()));
+			return b.CreateMul(l, r, description);
 		case AstExpr::Operation::Division:
-			return b.CreateSDiv(l, r, std::format("SDiv {} and {} ", expr->left()->getName(), expr->right()->getName()));
+			return b.CreateSDiv(l, r, description);
 		case AstExpr::Operation::Unary_negation:
-			return b.CreateNeg(l, std::format("Neg {}", expr->left()->getName()));
+			return b.CreateNeg(l, description);
 		case AstExpr::Operation::Call_fun:
 			return l;
 		default:

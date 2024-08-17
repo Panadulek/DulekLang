@@ -9,7 +9,7 @@ class AstExpr : public AstElement
 public:
 		enum class Operation : uint8_t
 		{
-			Addition,
+			Addition = 0,
 			Multiplication,
 			Division,
 			Subtraction,
