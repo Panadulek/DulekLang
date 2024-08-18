@@ -12,6 +12,7 @@ enum class BasicTypes : uint64_t
 	U64,
 	F32,
 	F64,
+	STR,
 	VOID_TYPE,
 
 };

@@ -7,7 +7,7 @@ class LlvmTypeGenerator
 private:
 
 public:
-	static llvm::Type* convertAstToLlvmType(BasicTypes bt)
+	static llvm::Type* convertAstToLlvmType(BasicTypes bt, std::size_t countElements = -1)
 	{
 		switch (bt)
 		{
@@ -30,6 +30,10 @@ public:
 				return llvm::Type::getFloatTy(getContext());
 			case BasicTypes::F64:
 				return llvm::Type::getDoubleTy(getContext());
+			case BasicTypes::STR:
+			{
+
+			}
 			default:
 				return nullptr;
 

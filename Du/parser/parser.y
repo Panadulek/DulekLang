@@ -39,7 +39,7 @@ using AstPtr = std::unique_ptr<AstElement>;
 }
 
 %token ARROW_TOKEN RET_STMT
-%token<strval> ID_TOKEN
+%token<strval> ID_TOKEN CONST_STR
 %token<intval> NUMBER_TOKEN
 %debug
 %left '+' '-'
@@ -119,6 +119,11 @@ expr:
     | NUMBER_TOKEN
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createUnsignedConst($1);
+    }
+    | CONST_STR
+    {
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createStrConst($1);
+        free($1);
     }
     | ID_TOKEN
     {

@@ -7,6 +7,7 @@ class AstVariableDecl : public AstElement
 	BasicTypes m_type;
 	std::string_view m_id;
 	int m_pointerLevel;
+	size_t m_counter;
 public:
 	explicit AstVariableDecl(BasicTypes, std::string_view, AstScope*);
 	BasicTypes getVarType() { return m_type; }

@@ -47,6 +47,11 @@ class AstFactory
 		{
 			return  new AstExpr(nullptr, AstExpr::Operation::ConstValue, new AstConst(val));
 		}
+		AstExpr* createStrConst(std::string_view val)
+		{
+			std::string str(val);
+			return  new AstExpr(nullptr, AstExpr::Operation::ConstValue, new AstConst(str));
+		}
 		AstExpr* createRef(std::string_view name)
 		{
 			if (!name.data())

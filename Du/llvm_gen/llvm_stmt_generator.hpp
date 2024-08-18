@@ -43,6 +43,10 @@ class llvmStmtGenerator
 			{
 			case BasicTypes::U64:
 				return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(aconst->getType()), aconst->get_uint64_t_value());
+			case BasicTypes::STR:
+			{
+				
+			}
 			}
 		}
 		else if (AstExpr* expr = ast_element_cast<AstExpr>(element))

@@ -15,6 +15,15 @@
 return RET_STMT;
 }
 
+\"([^\"\\]|\\.)*\" {
+    char* str = yytext;
+    const size_t len = strlen(str);
+    str[len - 1] = '\0';
+    memmove(str, str + 1, len - 1);
+    yylval.strval = strdup(str);
+    return CONST_STR;
+}
+
 [a-zA-Z_][a-zA-Z0-9_]*  { 
 yylval.strval = strdup(yytext);
 return ID_TOKEN;

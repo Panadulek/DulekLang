@@ -29,7 +29,7 @@ add_library(DuAst STATIC
     ast/AstVariableDecl.cpp
     ast/AstCast.cpp
     ast/AstUniqueCast.cpp
- "ast/AstBuilder.hpp"  "ast/AstCast.hpp"  "ast/ScopeDecorator.hpp" "ast/BasicType.hpp"  "ast/AstFactor.cpp" "ast/AstStatement.cpp" "ast/AstReference.h" "ast/ScopeDecorator.cpp")
+ "ast/AstBuilder.hpp"  "ast/AstCast.hpp"  "ast/ScopeDecorator.hpp" "ast/BasicType.hpp"  "ast/AstFactor.cpp" "ast/AstStatement.cpp" "ast/AstReference.h" "ast/AstCallFun.cpp")
 
 # Dodaj wykonywalny cel projektu
 add_executable (Du
