@@ -21,7 +21,7 @@ class AstScope final : public AstElement
 	class Global;
 
 	std::vector<std::unique_ptr<AstElement>> m_elements;
-	
+	std::vector<std::unique_ptr<AstElement>> m_stmts;
 	std::unique_ptr<Function> m_function;
 	
 	template<typename Container, typename Predicate>
@@ -61,6 +61,7 @@ public:
 	explicit AstScope(std::string_view name, AstElement* parent);
 	AstElement* addElement(std::unique_ptr<AstElement>&& element);
 	std::span<std::unique_ptr<AstElement>> getElements();
+	std::span<std::unique_ptr<AstElement>> getStmts();
 	AstElement* getParent() const { return AstElement::getParent(); }
 	Function* getFunctionDecorator() const { return m_function.get(); }
 	AstElement* getElement(std::string_view id)

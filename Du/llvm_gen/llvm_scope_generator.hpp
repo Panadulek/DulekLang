@@ -28,7 +28,6 @@ class LlvmScopeGenerator
 			getLlvmCache<>().insertElement(function, scope);
 			auto bb = llvm::BasicBlock::Create(getContext(), "entry", function);
 			b.SetInsertPoint(bb);
-			auto elements = scope->getElements();
 			llvm::Function::arg_iterator argsIt = function->arg_begin();
 			if (_fun->hasArgs())
 			{
@@ -39,6 +38,7 @@ class LlvmScopeGenerator
 					getLlvmCache<>().insertElement(val, it);
 				}
 			}
+			auto elements = scope->getStmts();
 			for (auto& it : elements)
 			{
 				llvmStmtGenerator::generateInstruction(it.get(), b);

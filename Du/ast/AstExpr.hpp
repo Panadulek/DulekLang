@@ -21,6 +21,8 @@ public:
 private:
 	bool isDeleteable(AstElement* toDelete)
 	{
+		if (!toDelete)
+			return false;
 		auto type = toDelete->getAstType();
 		switch (type)
 		{

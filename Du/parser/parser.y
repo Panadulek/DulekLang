@@ -70,6 +70,15 @@ stmt:
     {
         AstPtr ptr($1);
         AstBuildSystem::Instance().getBuilder().addElement(std::move(ptr));
+        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createDeclStmt($1);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
+    }
+    | decl_expr '=' expr ';'
+    {
+        AstPtr ptr($1);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(ptr));
+        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createDeclStmt($1, ast_element_cast<AstExpr>($3));
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
     }
     | expr ';'
     {

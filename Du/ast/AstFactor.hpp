@@ -115,6 +115,7 @@ class AstFactory
 					return std::make_unique<AstStatement>(nullptr, expr, AstStatement::STMT_TYPE::RHS_STMT);
 				}
 			}
+			return nullptr;
 		}
 
 		std::unique_ptr<AstElement> createRetStmt(AstElement* rhs)
@@ -126,6 +127,19 @@ class AstFactory
 					return std::make_unique<AstStatement>(nullptr, expr, AstStatement::STMT_TYPE::RET_STMT);
 				}
 			}
+			return nullptr;
+		}
+
+		std::unique_ptr<AstElement> createDeclStmt(AstElement* rhs, AstExpr* expr = nullptr)
+		{
+			if (rhs)
+			{
+				if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(rhs))
+				{
+					return std::make_unique<AstStatement>(decl, expr);
+				}
+			}
+			return nullptr;
 		}
 	};
 

@@ -146,7 +146,23 @@ class llvmStmtGenerator
 			return b.CreateRet(retVal);
 		}
 	}
-
+	static llvm::Value* generateDeclInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
+	{
+		llvm::Value* val = nullptr;
+		if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(stmt->lhs()))
+		{
+			AstExpr* rhs = stmt->rhs();
+			llvm::Type* llvmType = LlvmTypeGenerator::convertAstToLlvmType(decl->getVarType());
+			val = b.CreateAlloca(llvmType, nullptr, decl->getName());
+			getLlvmCache<>().insertElement(val, decl);
+			if (rhs)
+			{
+				llvm::Value* initVal = generateExprInstruction(rhs, b);
+				b.CreateStore(initVal, val);
+			}
+		}
+		return val;
+	}
 public:
 	static void generateInstruction(AstElement* stmt, llvm::IRBuilder<>& b)
 	{
@@ -162,21 +178,19 @@ public:
 				generateAssgnInstruction(_stmt, b);
 				break;
 			case AstStatement::STMT_TYPE::RHS_STMT:
-				generateRhsInstruction(ast_element_cast<AstStatement>(stmt), b);
+				generateRhsInstruction(_stmt, b);
 				break;
 			case AstStatement::STMT_TYPE::RET_STMT:
 				{
-					llvm::Value* retVal = generateRetInstruction(ast_element_cast<AstStatement>(stmt), b);
+					llvm::Value* retVal = generateRetInstruction(_stmt, b);
 					break;
+				}
+			case AstStatement::STMT_TYPE::DECLARATION:
+				{
+				generateDeclInstruction(_stmt, b);
 				}
 			}
 			return ;
-		}
-        else if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(stmt))
-        {
-            llvm::Type* llvmType = LlvmTypeGenerator::convertAstToLlvmType(decl->getVarType());
-            llvm::Value* val = b.CreateAlloca(llvmType, nullptr, decl->getName());
-			getLlvmCache<>().insertElement(val, stmt);
 		}
 		return;
 	}

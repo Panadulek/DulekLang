@@ -122,7 +122,15 @@ AstElement* AstScope::addElement(std::unique_ptr<AstElement>&& element)
 		}
 	}
 	else
-		m_elements.emplace_back(std::move(element));
+	{
+		if (AstStatement* stmt = ast_unique_element_cast<AstStatement>(element))
+		{
+			m_stmts.emplace_back(std::move(element));
+		}
+		else
+			m_elements.emplace_back(std::move(element));
+	
+	}
 	return m_elements.back().get();
 }
 
@@ -130,7 +138,10 @@ std::span<std::unique_ptr<AstElement>> AstScope::getElements()
 {
 	return m_elements;
 }
-
+std::span<std::unique_ptr<AstElement>> AstScope::getStmts()
+{
+	return m_stmts;
+}
 AstScope::Global& AstScope::getGlobal()
 {
 	static std::unique_ptr<Global> impl = std::make_unique<Global>();
