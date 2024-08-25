@@ -10,6 +10,7 @@
 #include "AstStatement.hpp"
 #include "AstConst.hpp"
 #include "AstReference.h"
+#include "../Terminal/Terminal.hpp"
 #include "AstCallFun.hpp"
 extern AstScope* getActualScope();
 
@@ -63,6 +64,10 @@ class AstFactory
 		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
 		{
 			AstElement* element = beginContainer->getElement(funName);
+			if (!element)
+			{
+				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, funName);
+			}
 			if (AstScope* scope = ast_element_cast<AstScope>(element))
 			{
 				if (scope->getFunctionDecorator())
@@ -98,7 +103,11 @@ class AstFactory
 			if (currentScope)
 			{
 				AstElement* scopeMember = currentScope->getElement(lhs);
-				if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
+				if (!scopeMember)
+				{
+					Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, lhs);
+				}
+				else if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
 				{
 					return std::make_unique<AstStatement>(scopeMember, expr, AstStatement::STMT_TYPE::ASSIGN);
 				}

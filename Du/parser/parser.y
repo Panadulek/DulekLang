@@ -11,6 +11,7 @@ extern "C" int yywrap();
 #include "../ast/AstBuildSystem.hpp"
 #include "../ast/BasicType.hpp"
 #include "../ast/AstList.hpp"
+#include "../Terminal/Terminal.hpp"
 #include<iostream>
 AstScope* getActualScope()
 {

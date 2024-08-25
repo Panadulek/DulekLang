@@ -33,7 +33,9 @@ add_library(DuAst STATIC
     ast/AstStatement.cpp
     ast/AstCallFun.cpp
     ast/ScopeDecorator.cpp
-    ast/AstVariableDecl.cpp)
+    ast/AstVariableDecl.cpp
+    Terminal/StandardTerminal.cpp
+     Terminal/Terminal.cpp)
 
 # Dodaj wykonywalny cel projektu
 add_executable (Du
@@ -42,7 +44,7 @@ add_executable (Du
     "Program/main.cpp" 
     "Program/Settings.h"
     "Program/Parser.cpp"
-  "llvm_gen/llvm_generator.h" "llvm_gen/llvm_output_process.h" "llvm_gen/llvm_type_generator.hpp"  "llvm_gen/llvm_generator.cpp" "llvm_gen/llvm_stmt_generator.hpp" "llvm_gen/llvm_cache.hpp")
+  "llvm_gen/llvm_generator.h" "llvm_gen/llvm_output_process.h" "llvm_gen/llvm_type_generator.hpp"  "llvm_gen/llvm_generator.cpp" "llvm_gen/llvm_stmt_generator.hpp" "llvm_gen/llvm_cache.hpp" "Terminal/StandardTerminal.cpp" "Terminal/Terminal.cpp")
 
 
 target_include_directories(Du PRIVATE ${3RD_PARTY_INCLUDES}/gnu)

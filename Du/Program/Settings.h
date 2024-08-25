@@ -6,7 +6,7 @@
 #include <vector>
 #include <coroutine>
 #include <Windows.h>
-
+#include "../Terminal/Terminal.hpp"
 
 #ifdef _DEBUG
 	#define DU_YYDEBUG true
@@ -53,6 +53,12 @@ public:
 		std::string_view& ret = m_filenames.front();
 		m_filenames.erase(m_filenames.begin());
 		return ret;
+	}
+	DuSettings(int argc, char** argv)
+	{
+		this->AnaylzeArgs(argc, argv);
+		if (!Terminal::Output())
+			Terminal::initOutput(new StandardTerminal());
 	}
 private:
 	friend class DulekLangTestClass;

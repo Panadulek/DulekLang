@@ -35,7 +35,7 @@
 /* "%code requires" blocks.  */
 
 /* Line 1676 of yacc.c  */
-#line 24 "parser/parser.y"
+#line 25 "parser/parser.y"
 
     #include "../ast/AstBuildSystem.hpp"
     #include "../ast/AstElement.hpp"
@@ -70,7 +70,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 33 "parser/parser.y"
+#line 34 "parser/parser.y"
 
     int intval;
     AstElement* astval;

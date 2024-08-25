@@ -16,20 +16,22 @@
 
 #include "../llvm_gen/llvm_generator.h"
 #include "../llvm_gen/llvm_output_process.h"
-
+#include "../Terminal/Terminal.hpp"
 
 #define NOMINMAX
 
 
 int main(int argc, char** argv)
 {
-	DuSettings settings;
-	std::cout << std::filesystem::current_path().string() << std::endl;
-	settings.AnaylzeArgs(argc, argv);
+
+	DuSettings settings(argc, argv);
 	std::string_view filename = settings.getNextFile();
 	Parser parser(filename, settings.is_yyDebug());
 	parser.parse();
+	if (Terminal::Output()->errorHappend())
+		return -1;
 	LlvmGen gen(filename.data());
+	AstElement* el;
 	gen.generateIr();
 	std::unique_ptr<llvmOutputProcess> m_outputProcess = std::make_unique<llvmIrOutputProcess>(gen, "main");
 	return 0;
