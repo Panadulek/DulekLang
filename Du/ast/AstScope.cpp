@@ -80,6 +80,23 @@ private:
 		}
 		return { false, BasicTypes::VOID_TYPE };
 	}
+	bool isTotalType(BasicTypes t)
+	{
+		switch (t)
+		{
+			case BasicTypes::I8:
+			case BasicTypes::I16:
+			case BasicTypes::I32:
+			case BasicTypes::I64:
+			case BasicTypes::U8:
+			case BasicTypes::U16:
+			case BasicTypes::U32:
+			case BasicTypes::U64:
+				return true;
+			default:
+				return false;
+		}
+	}
 	void clearFiles()
 	{
 		m_connectFileWithGlobalScope.clear();
@@ -173,6 +190,10 @@ bool AstScope::GlobalApi::addFile(std::string_view filename)
 AstScope* AstScope::GlobalApi::getCurrentGlobalScope()
 {
 	return AstScope::getGlobal().getCurrentGlobalScope();
+}
+bool AstScope::GlobalApi::isTotalType(BasicTypes type)
+{
+	return AstScope::getGlobal().isTotalType(type);
 }
 AstScope* AstScope::GlobalApi::getGlobalScopeForFile(std::string_view filename)
 {

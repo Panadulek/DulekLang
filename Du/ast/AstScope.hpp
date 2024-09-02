@@ -112,6 +112,7 @@ public:
 	{
 		static bool addFile(std::string_view filename);
 		static std::pair<bool, BasicTypes> isBasicType(std::string_view tname);
+		static bool isTotalType(BasicTypes type);
 		static AstScope* getCurrentGlobalScope();
 		static AstScope* getGlobalScopeForFile(std::string_view filename);
 	private: //function used only for unit tests project

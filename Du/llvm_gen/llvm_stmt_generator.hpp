@@ -146,14 +146,51 @@ class llvmStmtGenerator
 			return b.CreateRet(retVal);
 		}
 	}
+	static llvm::Value* generateDeclArrayInstruction(AstVariableDecl* stmt, llvm::IRBuilder<>& b)
+	{
+		auto begin = stmt->beginArrayRange();
+		auto end = stmt->endArrayRange();
+		if (begin.has_value() && end.has_value() && begin != end)
+		{
+			std::vector<llvm::Value*> dims(stmt->getDimensionCounter());
+			std::size_t idx = 0;
+			for(auto it = begin.value(); it != end.value(); it++)
+			{
+				dims[idx++] = generateExprInstruction(it->get()->getExpr(), b);
+			}
+			llvm::ArrayType* at = nullptr;
+	
+			for (std::size_t i = dims.size() - 1; i != UINT64_MAX; --i)
+			{
+				if (llvm::ConstantInt* _const = llvm::dyn_cast<llvm::ConstantInt>(dims[i]))
+				{
+					at = llvm::ArrayType::get(at ? at : LlvmTypeGenerator::convertAstToLlvmType(stmt->getVarType()), _const->getZExtValue());
+				}
+				else
+				{
+					assert(0);
+					return nullptr;
+				}
+			}
+			if (at)
+				return b.CreateAlloca(at, nullptr, stmt->getName());
+		}
+		return nullptr;
+	}
 	static llvm::Value* generateDeclInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
 	{
 		llvm::Value* val = nullptr;
 		if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(stmt->lhs()))
 		{
 			AstExpr* rhs = stmt->rhs();
-			llvm::Type* llvmType = LlvmTypeGenerator::convertAstToLlvmType(decl->getVarType());
-			val = b.CreateAlloca(llvmType, nullptr, decl->getName());
+			if (decl->isArray())
+			{
+				val = generateDeclArrayInstruction(decl, b);
+			}
+			else
+			{
+				val = b.CreateAlloca(LlvmTypeGenerator::convertAstToLlvmType(decl->getVarType()), nullptr, decl->getName());
+			}
 			getLlvmCache<>().insertElement(val, decl);
 			if (rhs)
 			{

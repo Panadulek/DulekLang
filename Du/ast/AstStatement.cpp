@@ -4,4 +4,6 @@ AstStatement::AstStatement(AstElement* lhs, AstExpr* rhs, STMT_TYPE type) : m_lh
 {}
 
 AstStatement::AstStatement(AstVariableDecl* lhs, AstExpr* expr) : m_lhs(lhs), m_rhs(expr), m_stmtType(AstStatement::STMT_TYPE::DECLARATION), AstElement("Statement", AstElement::ElementType::STATEMENT)
-{}
+{
+
+}

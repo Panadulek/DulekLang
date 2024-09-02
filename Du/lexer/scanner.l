@@ -41,6 +41,8 @@ return ID_TOKEN;
 "," {return ',';}
 "{" {return '{';}
 "}" {return '}';}
+"[" {return '[';}
+"]" {return ']';}
 "=" {return '=';}
 
 [ \t\n]+ { /* Ignoruj bia³e znaki */ }

@@ -167,8 +167,13 @@ expr_list:
 decl_expr:
     ID_TOKEN ID_TOKEN
     {
-        auto var = AstBuildSystem::Instance().getFactory(). varFactor().createVariable($1, $2, getActualScope()).release();
-        $$ = var;
+        $$ = AstBuildSystem::Instance().getFactory(). varFactor().createVariable($1, $2, getActualScope()).release();
+        free($1);
+        free($2);
+    }
+    | ID_TOKEN ID_TOKEN '[' expr ']'
+    {
+        $$ = AstBuildSystem::Instance().getFactory().varFactor().createArray($1, $2, ast_element_cast<AstExpr>($4),  getActualScope()).release();
         free($1);
         free($2);
     }

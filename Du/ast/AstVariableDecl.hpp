@@ -2,6 +2,7 @@
 #include "AstElement.hpp"
 #include "AstScope.hpp"
 #include "VariableDecorator.hpp"
+class AstExpr;
 class AstVariableDecl : public AstElement
 {
 public:
@@ -15,11 +16,36 @@ public:
 	explicit AstVariableDecl(BasicTypes, std::string_view, AstScope*);
 	BasicTypes getVarType();
 	AstScope* getScope(){return ast_element_cast<AstScope>(getParent());}
-	void setupArrayByString(std::string_view str)
+	void initArrayDecorator()
 	{
-		m_array.emplace(str);
+		m_array = ArrayDecorator();
+	}
+	bool addDimension(AstExpr* dim);
+
+	std::optional<ArrayDecorator::const_iterator> beginArrayRange()
+	{
+		if (!m_array.has_value())
+			return std::nullopt;
+		return m_array->begin();
 	}
 
+	std::optional<ArrayDecorator::const_iterator> endArrayRange()
+	{
+		if (!m_array.has_value())
+			return std::nullopt;
+		return m_array->end();
+	}
 
+	bool isArray()
+	{
+		return m_array.has_value();
+	}
+
+	std::size_t getDimensionCounter()
+	{
+		if (m_array.has_value())
+			return m_array->size();
+		return 0;
+	}
 
 };
