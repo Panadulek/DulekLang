@@ -97,7 +97,9 @@ class AstFactory
 			auto variable = createVariable(tname, idname, parent);
 			if (AstVariableDecl* decl = ast_unique_element_cast<AstVariableDecl>(variable))
 			{
-				decl->initArrayDecorator(dims);
+				AstType* type = decl->getVarType();
+				if(type)
+					type->initArray(dims);
 				return variable;
 			}
 			else

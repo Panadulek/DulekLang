@@ -13,7 +13,11 @@ public:
 	{
 		if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(m_ref))
 		{
-			return decl->getVarType();
+			auto type = decl->getVarType();
+			if (type)
+			{
+				return type->getType();
+			}
 		}
 		else if (AstScope* scope = ast_element_cast<AstScope>(m_ref))
 		{

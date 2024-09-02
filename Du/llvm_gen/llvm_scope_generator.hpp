@@ -20,7 +20,15 @@ class LlvmScopeGenerator
 				{
 					if (AstVariableDecl* var = ast_element_cast<AstVariableDecl>(it))
 					{
-						types.push_back(LlvmTypeGenerator::convertAstToLlvmType(var->getVarType()));
+						AstType* type = var->getVarType();
+						if (type)
+						{
+							types.push_back(LlvmTypeGenerator::convertAstToLlvmType(type->getType()));
+						}
+						else
+						{
+							assert(0);
+						}
 					}
 				}
 			}

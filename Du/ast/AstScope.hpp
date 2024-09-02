@@ -98,14 +98,14 @@ public:
 		{
 			if (m_function->hasRetType())
 			{
-				ret = std::make_optional(m_function->getRetType());
+				return m_function->getRetType();
 			}
 			else
 			{
-				ret = std::make_optional(BasicTypes::VOID_TYPE);
+				return std::make_optional(BasicTypes::VOID_TYPE);
 			}
 		}
-		return ret;
+		return std::nullopt;
 	}
 
 	struct GlobalApi

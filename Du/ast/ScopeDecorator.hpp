@@ -6,14 +6,14 @@
 #include "span"
 #include "AstList.hpp"
 
-
+class AstType;
 namespace ScopeDecorator
 {
 	class Function
 	{
 	private:
 		using _CONTAINER = std::vector<AstElement*>;
-		BasicTypes m_retType;
+		std::unique_ptr<AstType> m_retType;
 		std::unique_ptr<_CONTAINER> m_args;
 		AstScope* m_ptrToScope;
 	public:
@@ -22,17 +22,10 @@ namespace ScopeDecorator
 		Function() = delete;
 		Function(Function&) = delete;
 		Function(Function&&) = delete;
-		~Function()
-		{
-			if (hasArgs())
-			{
-				for (auto& it : *m_args)
-					delete it;
-			}
-		}
+		~Function();
 		bool isProcedure() const;
 		bool hasRetType() const;
-		BasicTypes getRetType() const;
+		std::optional<BasicTypes> getRetType() const;
 		const bool hasArgs() const;
 		std::span<AstElement*> getArgs() const;
 		std::size_t getArgsCounter() const;
