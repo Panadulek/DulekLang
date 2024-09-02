@@ -35,14 +35,14 @@
 /* "%code requires" blocks.  */
 
 /* Line 1676 of yacc.c  */
-#line 25 "parser/parser.y"
+#line 26 "parser/parser.y"
 
     #include "../ast/AstBuildSystem.hpp"
     #include "../ast/AstElement.hpp"
     #include <vector>
     #include "../ast/BasicType.hpp"
     #include <iostream>
-
+    #include "../ast/VariableDecorator.hpp"
 
 
 
@@ -70,18 +70,19 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 34 "parser/parser.y"
+#line 35 "parser/parser.y"
 
     int intval;
     AstElement* astval;
     AstList* astlist;
     char* strval;
     ScopeDecorator::Function::CONTAINER* scopeInputList;
+    VariableDecorator::Array* arrayDecorator;
 
 
 
 /* Line 1676 of yacc.c  */
-#line 85 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 86 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

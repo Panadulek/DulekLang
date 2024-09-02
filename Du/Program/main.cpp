@@ -23,7 +23,6 @@
 
 int main(int argc, char** argv)
 {
-
 	DuSettings settings(argc, argv);
 	std::string_view filename = settings.getNextFile();
 	Parser parser(filename, settings.is_yyDebug());

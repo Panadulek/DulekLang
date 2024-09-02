@@ -12,6 +12,7 @@ extern "C" int yywrap();
 #include "../ast/BasicType.hpp"
 #include "../ast/AstList.hpp"
 #include "../Terminal/Terminal.hpp"
+#include "../ast/VariableDecorator.hpp"
 #include<iostream>
 AstScope* getActualScope()
 {
@@ -28,7 +29,7 @@ using AstPtr = std::unique_ptr<AstElement>;
     #include <vector>
     #include "../ast/BasicType.hpp"
     #include <iostream>
-
+    #include "../ast/VariableDecorator.hpp"
 }
 
 %union {
@@ -37,6 +38,7 @@ using AstPtr = std::unique_ptr<AstElement>;
     AstList* astlist;
     char* strval;
     ScopeDecorator::Function::CONTAINER* scopeInputList;
+    VariableDecorator::Array* arrayDecorator;
 }
 
 %token ARROW_TOKEN RET_STMT
@@ -49,6 +51,7 @@ using AstPtr = std::unique_ptr<AstElement>;
 %type <astval> expr decl_expr decl_fun decl_fun_header stmt
 %type <astlist> expr_list 
 %type <scopeInputList>decl_expr_list
+%type <arrayDecorator> dimension_list
 %start program
 
 %%
@@ -145,6 +148,10 @@ expr:
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1,  getActualScope(), $3);
         free($1);
     }
+    | ID_TOKEN dimension_list // array operator
+    {
+    
+    }
     | ID_TOKEN '(' ')'
     {
         
@@ -164,6 +171,19 @@ expr_list:
         $$->push($3);
     }
     ;
+
+dimension_list:
+    '[' expr ']' 
+    {
+        $$ = new VariableDecorator::Array();
+        $$->emplace_back(std::make_unique<VariableDecorator::Dimension>(ast_element_cast<AstExpr>($2)));
+    }
+    | dimension_list '[' expr ']'
+    {
+        $$ = $1;
+        $$->emplace_back(std::make_unique<VariableDecorator::Dimension>(ast_element_cast<AstExpr>($3)));
+    }
+    ;
 decl_expr:
     ID_TOKEN ID_TOKEN
     {
@@ -171,9 +191,9 @@ decl_expr:
         free($1);
         free($2);
     }
-    | ID_TOKEN ID_TOKEN '[' expr ']'
+    | ID_TOKEN ID_TOKEN dimension_list
     {
-        $$ = AstBuildSystem::Instance().getFactory().varFactor().createArray($1, $2, ast_element_cast<AstExpr>($4),  getActualScope()).release();
+        $$ = AstBuildSystem::Instance().getFactory().varFactor().createArray($1, $2, $3, getActualScope()).release();
         free($1);
         free($2);
     }

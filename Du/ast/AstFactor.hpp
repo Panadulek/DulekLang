@@ -90,25 +90,18 @@ class AstFactory
 			return std::make_unique<AstVariableDecl>(isBuiltInType.second, idname, parent);
 		}
 
-		std::unique_ptr<AstElement> createArray(std::string_view tname, std::string_view idname, AstExpr* dimension, AstScope* parent)
+		std::unique_ptr<AstElement> createArray(std::string_view tname, std::string_view idname, VariableDecorator::Array* dims, AstScope* parent)
 		{
-			if (!dimension)
+			if (!dims)
 				return nullptr;
 			auto variable = createVariable(tname, idname, parent);
 			if (AstVariableDecl* decl = ast_unique_element_cast<AstVariableDecl>(variable))
 			{
-				if (dimension->op() == AstExpr::Operation::ConstValue)
-				{
-					AstConst* _const = ast_element_cast<AstConst>(dimension->right());
-					if (AstScope::GlobalApi::isTotalType(_const->getType()))
-					{
-						decl->initArrayDecorator();
-						decl->addDimension(dimension);
-						return variable;
-					}
-				}
-			
+				decl->initArrayDecorator(dims);
+				return variable;
 			}
+			else
+				delete dims;
 			return nullptr;
 		}
 	};
