@@ -58,7 +58,6 @@ public:
 		if (!expr || expr->op() != AstExpr::Operation::Arr_Indexing)
 			return nullptr;
 		auto ret = expr->createArrayFromIndexingOp();
-		delete expr;
 		return ret;
 	}
 
