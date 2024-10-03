@@ -38,7 +38,7 @@ using AstPtr = std::unique_ptr<AstElement>;
     AstList* astlist;
     char* strval;
     ScopeDecorator::Function::CONTAINER* scopeInputList;
-    VariableDecorator::Array* arrayDecorator;
+    ArrayDecorator::Array* arrayDecorator;
 }
 
 %token ARROW_TOKEN RET_STMT
@@ -150,7 +150,8 @@ expr:
     }
     | ID_TOKEN dimension_list // array operator
     {
-    
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp($1, *$2);
+        free($1);
     }
     | ID_TOKEN '(' ')'
     {
@@ -175,13 +176,13 @@ expr_list:
 dimension_list:
     '[' expr ']' 
     {
-        $$ = new VariableDecorator::Array();
-        $$->emplace_back(std::make_unique<VariableDecorator::Dimension>(ast_element_cast<AstExpr>($2)));
+        $$ = new ArrayDecorator::Array();
+        $$->emplace_back(std::make_unique<ArrayDecorator::Dimension>(ast_element_cast<AstExpr>($2)));
     }
     | dimension_list '[' expr ']'
     {
         $$ = $1;
-        $$->emplace_back(std::make_unique<VariableDecorator::Dimension>(ast_element_cast<AstExpr>($3)));
+        $$->emplace_back(std::make_unique<ArrayDecorator::Dimension>(ast_element_cast<AstExpr>($3)));
     }
     ;
 decl_expr:

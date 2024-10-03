@@ -35,7 +35,10 @@ add_library(DuAst STATIC
     ast/ScopeDecorator.cpp
     ast/AstVariableDecl.cpp
     Terminal/StandardTerminal.cpp
-     Terminal/Terminal.cpp)
+    Terminal/Terminal.cpp 
+    ast/AstType.cpp 
+    ast/AstExpr.cpp
+    ast/VariableDecorator.cpp)
 
 # Dodaj wykonywalny cel projektu
 add_executable (Du

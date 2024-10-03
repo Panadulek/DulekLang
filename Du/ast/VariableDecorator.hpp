@@ -2,29 +2,17 @@
 #include <string_view>
 #include <vector>
 #include <memory>
-namespace VariableDecorator
+class AstExpr;
+namespace ArrayDecorator
 {
 	class Dimension
 	{
 		std::unique_ptr<AstExpr> m_dimension;
 		bool m_isDynamic;
 	public:
-		Dimension(AstExpr* expr) : m_dimension(expr)
-		{
-			switch (expr->op())
-			{
-			case AstExpr::Operation::ConstValue:
-				m_isDynamic = false;
-				break;
-			default:
-				m_isDynamic = true;
-				break;
-			}
-		}
-		AstExpr* getExpr()
-		{
-			return m_dimension.get();
-		}
+		Dimension(AstExpr* expr);
+		AstExpr* getExpr();
+		AstExpr* releaseExpr();
 	};
 
 

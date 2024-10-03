@@ -77,7 +77,7 @@ typedef union YYSTYPE
     AstList* astlist;
     char* strval;
     ScopeDecorator::Function::CONTAINER* scopeInputList;
-    VariableDecorator::Array* arrayDecorator;
+    ArrayDecorator::Array* arrayDecorator;
 
 
 

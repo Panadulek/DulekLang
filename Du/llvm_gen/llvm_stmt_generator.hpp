@@ -35,6 +35,33 @@ class llvmStmtGenerator
 		auto bb = b.GetInsertBlock();
 		return _getAllocInst(variableName, bb->begin(), bb->end());
 	}
+	static llvm::Value* generateArrayIndexing(AstExpr* expr, llvm::IRBuilder<>& b)
+	{
+		if (!expr)
+			return nullptr;
+		AstExpr* left = ast_element_cast<AstExpr>(expr->left());
+		if (left && left->op() == AstExpr::Operation::Reference)
+		{
+			if (AstRef* ref = ast_element_cast<AstRef>(left->right()))
+			{
+				if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(ref->ref()))
+				{
+					if (AstExpr* _expr = ast_element_cast<AstExpr>(expr->right()))
+					{
+						auto dims = AstExpr::transformExprToDimsArray(_expr);
+						if (dims)
+						{
+							for (auto& it : *dims)
+							{
+
+							}
+						}
+					}
+				}
+			}
+		}
+		return nullptr;
+	}
 	static llvm::Value* getValueFromExpr(AstElement* element, llvm::IRBuilder<>& b)
 	{
 		if (AstConst* aconst = ast_element_cast<AstConst>(element))
@@ -51,7 +78,7 @@ class llvmStmtGenerator
 		}
 		else if (AstExpr* expr = ast_element_cast<AstExpr>(element))
 		{
-			return generateExprInstruction(expr, b);
+				return generateExprInstruction(expr, b);
 		}
 		else if (AstRef* ref = ast_element_cast<AstRef>(element))
 		{
@@ -86,36 +113,43 @@ class llvmStmtGenerator
 	}
 	static llvm::Value* generateExprInstruction(AstExpr* expr, llvm::IRBuilder<>& b)
 	{
-		llvm::Value* l = getValueFromExpr(expr->left(), b);
-		llvm::Value* r = getValueFromExpr(expr->right(), b);
-		std::string description =
-#ifdef _DEBUG
-			std::format("{}, {} and {}", static_cast<uint8_t>(expr->op()), expr->left() ? expr->left()->getName() : "null", 
-				expr->right() ? expr->right()->getName() : "null");
-#else
-			"";
-#endif
-		switch (expr->op())
+		if (expr->op() == AstExpr::Operation::Arr_Indexing)
 		{
-		case AstExpr::Operation::Addition:
-			return b.CreateAdd(l, r, description);
-		case AstExpr::Operation::Subtraction:
-			return b.CreateSub(l, r, description);
-		case AstExpr::Operation::Reference:
-		case AstExpr::Operation::ConstValue:
-			return r;
-		case AstExpr::Operation::Multiplication:
-			return b.CreateMul(l, r, description);
-		case AstExpr::Operation::Division:
-			return b.CreateSDiv(l, r, description);
-		case AstExpr::Operation::Unary_negation:
-			return b.CreateNeg(l, description);
-		case AstExpr::Operation::Call_fun:
-			return l;
-		default:
-			break;
+			return generateArrayIndexing(expr, b);
 		}
-		return nullptr;
+		else
+		{
+			llvm::Value* l = getValueFromExpr(expr->left(), b);
+			llvm::Value* r = getValueFromExpr(expr->right(), b);
+			std::string description =
+#ifdef _DEBUG
+				std::format("{}, {} and {}", static_cast<uint8_t>(expr->op()), expr->left() ? expr->left()->getName() : "null",
+					expr->right() ? expr->right()->getName() : "null");
+#else
+				"";
+#endif
+			switch (expr->op())
+			{
+			case AstExpr::Operation::Addition:
+				return b.CreateAdd(l, r, description);
+			case AstExpr::Operation::Subtraction:
+				return b.CreateSub(l, r, description);
+			case AstExpr::Operation::Reference:
+			case AstExpr::Operation::ConstValue:
+				return r;
+			case AstExpr::Operation::Multiplication:
+				return b.CreateMul(l, r, description);
+			case AstExpr::Operation::Division:
+				return b.CreateSDiv(l, r, description);
+			case AstExpr::Operation::Unary_negation:
+				return b.CreateNeg(l, description);
+			case AstExpr::Operation::Call_fun:
+				return l;
+			default:
+				break;
+			}
+			return nullptr;
+		}
 	}
 	static void generateAssgnInstruction(AstStatement* assgn, llvm::IRBuilder<>& b)
 	{

@@ -8,7 +8,7 @@
 #include <cassert>
 class AstType
 {
-	using ArrayDecorator = VariableDecorator::Array;
+	using ArrayDecorator = ArrayDecorator::Array;
 	BasicTypes m_simpleType;
 	std::unique_ptr<ArrayDecorator> m_arrayDims;
 	class Cache //implement Cache for Basic Types in future
@@ -17,7 +17,7 @@ class AstType
 	};
 public:
 	AstType(BasicTypes type) : m_simpleType(type), m_arrayDims(nullptr) {}
-	void initArray(VariableDecorator::Array* arr)
+	void initArray(ArrayDecorator* arr)
 	{
 		if (!m_arrayDims)
 			m_arrayDims.reset(arr);

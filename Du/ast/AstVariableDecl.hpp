@@ -7,7 +7,7 @@ class AstExpr;
 class AstVariableDecl : public AstElement
 {
 public:
-	using ArrayDecorator = VariableDecorator::Array;
+	using ArrayDecorator = ArrayDecorator::Array;
 private:
 	std::unique_ptr<AstType> m_type;
 	std::string_view m_id;

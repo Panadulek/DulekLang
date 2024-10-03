@@ -79,6 +79,26 @@ class AstFactory
 				// TO_DO ERRORS
 			}
 		}
+
+		AstExpr* createArrayIndexingOp(std::string_view varName, ArrayDecorator::Array& dims)
+		{
+			AstScope* scope = getActualScope();
+			AstVariableDecl* element = ast_element_cast<AstVariableDecl>(scope->getElement(varName));
+			AstExpr* expr = nullptr;
+			if (element)
+			{
+				for (int i = dims.size() - 1; i >= 0; --i)
+				{
+					expr = new AstExpr(dims[i]->releaseExpr(), AstExpr::Operation::Arr_Indexing, expr);
+				}
+				if (expr)
+					expr = new AstExpr(createRef(varName), AstExpr::Operation::Arr_Indexing, expr);
+			}
+			else
+				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, varName);
+			return expr;
+		}
+
 	};
 	struct VariableFactor
 	{
@@ -90,7 +110,7 @@ class AstFactory
 			return std::make_unique<AstVariableDecl>(isBuiltInType.second, idname, parent);
 		}
 
-		std::unique_ptr<AstElement> createArray(std::string_view tname, std::string_view idname, VariableDecorator::Array* dims, AstScope* parent)
+		std::unique_ptr<AstElement> createArray(std::string_view tname, std::string_view idname, ArrayDecorator::Array* dims, AstScope* parent)
 		{
 			if (!dims)
 				return nullptr;

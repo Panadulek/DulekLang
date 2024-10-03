@@ -159,7 +159,7 @@ typedef union YYSTYPE
     AstList* astlist;
     char* strval;
     ScopeDecorator::Function::CONTAINER* scopeInputList;
-    VariableDecorator::Array* arrayDecorator;
+    ArrayDecorator::Array* arrayDecorator;
 
 
 
@@ -475,8 +475,8 @@ static const yytype_uint8 yyrline[] =
 {
        0,    59,    59,    61,    66,    73,    80,    87,    92,    97,
      102,   103,   108,   112,   116,   120,   124,   128,   132,   136,
-     141,   146,   151,   155,   163,   165,   169,   176,   181,   188,
-     194,   204,   209,   216,   225,   236
+     141,   146,   151,   156,   164,   166,   170,   177,   182,   189,
+     195,   205,   210,   217,   226,   237
 };
 #endif
 
@@ -1585,14 +1585,15 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 152 "parser/parser.y"
     {
-    
+        (yyval.astval) = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp((yyvsp[(1) - (2)].strval), *(yyvsp[(2) - (2)].arrayDecorator));
+        free((yyvsp[(1) - (2)].strval));
     ;}
     break;
 
   case 23:
 
 /* Line 1455 of yacc.c  */
-#line 156 "parser/parser.y"
+#line 157 "parser/parser.y"
     {
         
         (yyval.astval) = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun((yyvsp[(1) - (3)].strval),  getActualScope(), nullptr);
@@ -1603,7 +1604,7 @@ yyreduce:
   case 25:
 
 /* Line 1455 of yacc.c  */
-#line 165 "parser/parser.y"
+#line 166 "parser/parser.y"
     {
         (yyval.astlist) = new AstArgs();
         (yyval.astlist)->push((yyvsp[(1) - (1)].astval));
@@ -1613,7 +1614,7 @@ yyreduce:
   case 26:
 
 /* Line 1455 of yacc.c  */
-#line 170 "parser/parser.y"
+#line 171 "parser/parser.y"
     {
         (yyval.astlist)->push((yyvsp[(3) - (3)].astval));
     ;}
@@ -1622,27 +1623,27 @@ yyreduce:
   case 27:
 
 /* Line 1455 of yacc.c  */
-#line 177 "parser/parser.y"
+#line 178 "parser/parser.y"
     {
-        (yyval.arrayDecorator) = new VariableDecorator::Array();
-        (yyval.arrayDecorator)->emplace_back(std::make_unique<VariableDecorator::Dimension>(ast_element_cast<AstExpr>((yyvsp[(2) - (3)].astval))));
+        (yyval.arrayDecorator) = new ArrayDecorator::Array();
+        (yyval.arrayDecorator)->emplace_back(std::make_unique<ArrayDecorator::Dimension>(ast_element_cast<AstExpr>((yyvsp[(2) - (3)].astval))));
     ;}
     break;
 
   case 28:
 
 /* Line 1455 of yacc.c  */
-#line 182 "parser/parser.y"
+#line 183 "parser/parser.y"
     {
         (yyval.arrayDecorator) = (yyvsp[(1) - (4)].arrayDecorator);
-        (yyval.arrayDecorator)->emplace_back(std::make_unique<VariableDecorator::Dimension>(ast_element_cast<AstExpr>((yyvsp[(3) - (4)].astval))));
+        (yyval.arrayDecorator)->emplace_back(std::make_unique<ArrayDecorator::Dimension>(ast_element_cast<AstExpr>((yyvsp[(3) - (4)].astval))));
     ;}
     break;
 
   case 29:
 
 /* Line 1455 of yacc.c  */
-#line 189 "parser/parser.y"
+#line 190 "parser/parser.y"
     {
         (yyval.astval) = AstBuildSystem::Instance().getFactory(). varFactor().createVariable((yyvsp[(1) - (2)].strval), (yyvsp[(2) - (2)].strval), getActualScope()).release();
         free((yyvsp[(1) - (2)].strval));
@@ -1653,7 +1654,7 @@ yyreduce:
   case 30:
 
 /* Line 1455 of yacc.c  */
-#line 195 "parser/parser.y"
+#line 196 "parser/parser.y"
     {
         (yyval.astval) = AstBuildSystem::Instance().getFactory().varFactor().createArray((yyvsp[(1) - (3)].strval), (yyvsp[(2) - (3)].strval), (yyvsp[(3) - (3)].arrayDecorator), getActualScope()).release();
         free((yyvsp[(1) - (3)].strval));
@@ -1664,7 +1665,7 @@ yyreduce:
   case 31:
 
 /* Line 1455 of yacc.c  */
-#line 205 "parser/parser.y"
+#line 206 "parser/parser.y"
     {
         (yyval.scopeInputList) = new ScopeDecorator::Function::CONTAINER();
         (yyval.scopeInputList)->emplace_back((yyvsp[(1) - (1)].astval));
@@ -1674,7 +1675,7 @@ yyreduce:
   case 32:
 
 /* Line 1455 of yacc.c  */
-#line 210 "parser/parser.y"
+#line 211 "parser/parser.y"
     {
         (yyval.scopeInputList)->emplace_back((yyvsp[(3) - (3)].astval));
     ;}
@@ -1683,7 +1684,7 @@ yyreduce:
   case 33:
 
 /* Line 1455 of yacc.c  */
-#line 217 "parser/parser.y"
+#line 218 "parser/parser.y"
     {
         auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction((yyvsp[(1) - (5)].strval), (yyvsp[(5) - (5)].strval), nullptr);
         auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
@@ -1696,7 +1697,7 @@ yyreduce:
   case 34:
 
 /* Line 1455 of yacc.c  */
-#line 226 "parser/parser.y"
+#line 227 "parser/parser.y"
     {
         auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction((yyvsp[(1) - (6)].strval), (yyvsp[(6) - (6)].strval), (yyvsp[(3) - (6)].scopeInputList));
         auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
@@ -1709,7 +1710,7 @@ yyreduce:
   case 35:
 
 /* Line 1455 of yacc.c  */
-#line 237 "parser/parser.y"
+#line 238 "parser/parser.y"
     {
          AstBuildSystem::Instance().getBuilder().exitScope();
          (yyval.astval) = (yyvsp[(1) - (4)].astval);
@@ -1719,7 +1720,7 @@ yyreduce:
 
 
 /* Line 1455 of yacc.c  */
-#line 1723 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1724 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -1931,7 +1932,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 246 "parser/parser.y"
+#line 247 "parser/parser.y"
 
 
 
