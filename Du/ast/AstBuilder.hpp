@@ -23,8 +23,8 @@ public:
 			}
 			else
 			{
-				m_actualScope->addElement(std::move(element));
-				return m_actualScope->getElements().back().get();
+				return m_actualScope->addElement(std::move(element));
+	
 			}
 		}
 	}

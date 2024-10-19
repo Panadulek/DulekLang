@@ -3,6 +3,8 @@
 bool AstCallFun::resolve() 
 {
 	std::size_t argsCounter = getArgsSize();
+	if (!argsCounter && !m_fun->hasArgs())
+		return true;
 	std::size_t parameterCounter = m_fun->getArgsCounter();
 	if (argsCounter == parameterCounter)
 	{

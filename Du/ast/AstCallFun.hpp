@@ -18,6 +18,8 @@ public:
 	}
 	explicit AstCallFun(AstArgs* args, Function* fun) : m_args(args), m_fun(fun), m_argsResolved(false), AstElement("CallFun", AstElement::ElementType::CALL_FUN)
 	{
+		if (!m_args)
+			m_args.reset(new AstArgs());
 		m_argsResolved = resolve();
 	}
 	explicit AstCallFun(AstArgs* args, AstScope* scope) : AstCallFun(args, scope->getFunctionDecorator()) 

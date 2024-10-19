@@ -8,5 +8,5 @@ std::string_view AstElement::getName() const { return m_name; }
 const AstElement::ElementType AstElement::getAstType() { return m_astType; }
 const bool AstElement::nameIsKeyword()
 {
-	return m_astType == ElementType::LOOP_EXPR || m_astType == ElementType::TYPE || m_astType == ElementType::POINTER_TYPE || m_astType == ElementType::CONST_ || m_astType == ElementType::CONDITION_EXPR || m_astType == ElementType::STATEMENT;
+	return m_astType == ElementType::LOOP_EXPR ||   m_astType == ElementType::CONDITION_EXPR || m_astType == ElementType::STATEMENT;
 }

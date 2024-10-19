@@ -59,6 +59,10 @@ class AstFactory
 				return nullptr;
 			AstScope* scope = getActualScope();
 			AstElement* element = scope->getElement(name);
+			if (!element)
+			{
+				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU001, name);
+			}
 			return new AstExpr(nullptr, AstExpr::Operation::Reference, new AstRef(element));
 		}
 		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)

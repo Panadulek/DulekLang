@@ -44,7 +44,7 @@ add_library(DuAst STATIC
 add_executable (Du
     ${BISON_Parser_OUTPUTS}
     ${FLEX_Scanner_OUTPUTS}
-    "Program/main.cpp" 
+     
     "Program/Settings.h"
     "Program/Parser.cpp"
   "llvm_gen/llvm_generator.h" "llvm_gen/llvm_output_process.h" "llvm_gen/llvm_type_generator.hpp"  "llvm_gen/llvm_generator.cpp" "llvm_gen/llvm_stmt_generator.hpp" "llvm_gen/llvm_cache.hpp" "Terminal/StandardTerminal.cpp" "Terminal/Terminal.cpp")

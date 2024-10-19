@@ -70,6 +70,10 @@ stmt:
         AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable($1, $3, getActualScope());
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
     }
+    | ID_TOKEN dimension_list '=' expr
+    {
+
+    }
     | decl_expr ';'
     {
         AstPtr ptr($1);
@@ -99,7 +103,7 @@ stmt:
 ;
 
 stmt_list:
-    stmt
+    |stmt
     | stmt_list stmt
 ;
 

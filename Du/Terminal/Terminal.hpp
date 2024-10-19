@@ -17,6 +17,7 @@ struct Terminal
 	enum CodeList : uint64_t
 	{
 		DU001,
+		DU002,
 		LAST_ERR
 	};
 	virtual void print(MessageType, CodeList code, std::string_view opt_message) = 0;

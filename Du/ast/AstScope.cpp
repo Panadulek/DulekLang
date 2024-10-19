@@ -125,30 +125,28 @@ auto AstScope::getFilteredViewByNotKeywordName()
 
 AstElement* AstScope::addElement(std::unique_ptr<AstElement>&& element)
 {
-	auto filteredView = getFilteredViewByNotKeywordName();
-	if (isEmptyView(filteredView))
-	{
-		if (isNewElementUniqueByName(filteredView, element))
-		{
-			m_elements.emplace_back(std::move(element));
-		}
-		else
-		{
-			assert(false && "Name was declared");
-			return nullptr;
-		}
-	}
-	else
+	if (element)
 	{
 		if (AstStatement* stmt = ast_unique_element_cast<AstStatement>(element))
 		{
 			m_stmts.emplace_back(std::move(element));
+			return m_stmts.back().get();
 		}
 		else
-			m_elements.emplace_back(std::move(element));
-	
+		{
+			auto filtredView = getFilteredViewByNotKeywordName();
+			if(isNewElementUniqueByName(filtredView, element))
+			{
+				m_elements.emplace_back(std::move(element));
+				return m_elements.back().get();
+			}
+			else
+			{
+				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU002, std::format("\"{}\" \"{}\"", getName(), element->getName()));
+				return nullptr;
+			}
+		}
 	}
-	return m_elements.back().get();
 }
 
 std::span<std::unique_ptr<AstElement>> AstScope::getElements()
