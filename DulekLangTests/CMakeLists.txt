@@ -31,6 +31,8 @@ add_executable(DulekLangTests
     "${PROJECT_DIR}/ast/AstUniqueCast.cpp"
     "${PROJECT_DIR}/ast/AstFactor.cpp"
     "${PROJECT_DIR}/ast/ScopeDecorator.cpp"
+    "${PROJECT_DIR}/Terminal/Terminal.cpp"
+    "${PROJECT_DIR}/Terminal/StandardTerminal.cpp"
     "main.cpp" "AstBuilderTest.h")
 
 

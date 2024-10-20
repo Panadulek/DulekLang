@@ -31,7 +31,6 @@ int main(int argc, char** argv)
 	if (Terminal::Output()->errorHappend())
 		return -1;
 	LlvmGen gen(filename.data());
-	AstElement* el;
 	gen.generateIr();
 	std::unique_ptr<llvmOutputProcess> m_outputProcess = std::make_unique<llvmIrOutputProcess>(gen, "main");
 	return 0;

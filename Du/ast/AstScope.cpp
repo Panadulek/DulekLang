@@ -9,7 +9,7 @@
 #include "BasicType.hpp"
 #include "AstBuildSystem.hpp"
 #include <string_view>
-
+#include "../Terminal/Terminal.hpp"
 
 /*
  * Global---
