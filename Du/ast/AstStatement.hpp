@@ -24,5 +24,9 @@ public:
 	const STMT_TYPE getStmtType() const { return m_stmtType; }
 	AstExpr* rhs() { return m_rhs.get(); }
 	AstElement* lhs() { return m_lhs; }
-	~AstStatement() = default;
+	~AstStatement()
+	{
+		if (AstExpr* expr = ast_element_cast<AstExpr>(m_lhs))
+			delete expr;
+	}
 };

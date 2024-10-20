@@ -14,7 +14,11 @@
 #include "llvm_cache.hpp"
 class llvmStmtGenerator
 {
-
+	static llvm::Value* dump_op(llvm::Value* val)
+	{
+		val->dump();
+		return val;
+	} 
 	static llvm::Value* _getAllocInst(std::string_view variableName, llvm::BasicBlock::iterator begin, llvm::BasicBlock::iterator end)
 	{
 		for (auto it = begin; it != end; it++)
@@ -42,23 +46,25 @@ class llvmStmtGenerator
 		AstExpr* left = ast_element_cast<AstExpr>(expr->left());
 		if (left && left->op() == AstExpr::Operation::Reference)
 		{
-			if (AstRef* ref = ast_element_cast<AstRef>(left->right()))
+			llvm::Value* arr = generateExprInstruction(left, b);
+			llvm::Type* elementType = arr->getType();
+			llvm::Type* _elementType = elementType;
+			if (AstExpr* _expr = ast_element_cast<AstExpr>(expr->right()))
 			{
-				if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(ref->ref()))
+				auto dims = AstExpr::transformExprToDimsArray(_expr);
+				std::vector<llvm::Value*> llvmIdxs;
+				if (dims)
 				{
-					if (AstExpr* _expr = ast_element_cast<AstExpr>(expr->right()))
+					for (auto it = dims->begin(); it != dims->end(); ++it)
 					{
-						auto dims = AstExpr::transformExprToDimsArray(_expr);
-						if (dims)
-						{
-							for (auto& it : *dims)
-							{
-
-							}
-						}
+						if (it != dims->begin())
+							elementType = elementType->getPointerTo();
+						llvmIdxs.push_back(generateExprInstruction(it->get()->getExpr(), b));
 					}
+					return b.CreateGEP(_elementType, arr, llvmIdxs);
+					
 				}
-			}
+			}			
 		}
 		return nullptr;
 	}
@@ -83,10 +89,7 @@ class llvmStmtGenerator
 		else if (AstRef* ref = ast_element_cast<AstRef>(element))
 		{
 			llvm::Value* variable = getLlvmCache<>().getValue(ref);
-			if(variable->getType()->isPointerTy())
-				return b.CreateLoad(LlvmTypeGenerator::convertAstToLlvmType(ref->getType().value()), variable, std::format("Load from: {}", ref->getName()));
-			return
-				variable;
+			return variable;
 		}
 		else if (AstCallFun* callFn = dynamic_cast<AstCallFun*>(element))
 		{
@@ -161,13 +164,18 @@ class llvmStmtGenerator
 			llvm::Value* variable = nullptr;
 			if (AstExpr* expr = ast_element_cast<AstExpr>(lhs))
 			{
-				if (expr->op() == AstExpr::Operation::Reference && expr->right())
+				switch (expr->op())
 				{
-
-					variable = getAllocInst(expr->right()->getName(), b);
-				}
-				else
-					assert(0 && "Expr != Reference || expr->right == null");
+					case AstExpr::Operation::Arr_Indexing:
+					case AstExpr::Operation::Reference:
+					{
+						variable = generateExprInstruction(expr, b);
+						break;
+					}
+					default:
+						assert(0 && "Expr != able to assign");
+						break;
+				}					
 			}
 			else
 				 variable = getAllocInst(assgn->lhs()->getName(), b);
@@ -226,7 +234,7 @@ class llvmStmtGenerator
 				}
 			}
 			if (at)
-				return b.CreateAlloca(at, nullptr, stmt->getName());
+				return dump_op(b.CreateAlloca(at, nullptr, stmt->getName()));
 		}
 		return nullptr;
 	}

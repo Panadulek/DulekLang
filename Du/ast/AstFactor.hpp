@@ -140,7 +140,7 @@ class AstFactory
 
 			if (currentScope)
 			{
-				AstElement* scopeMember = AstFactory::ExprFactor().createRef(lhs);
+				AstElement* scopeMember = currentScope->getElement(lhs);
 				if (!scopeMember)
 				{
 					Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, lhs);
@@ -153,6 +153,17 @@ class AstFactory
 			return nullptr;
 		}
 		
+		std::unique_ptr<AstElement> createAssigmentVariable(AstElement* expr, AstElement* rhs)
+		{
+
+			if (AstExpr* _expr = ast_element_cast<AstExpr>(rhs))
+			{	
+				return std::make_unique<AstStatement>(expr, _expr, AstStatement::STMT_TYPE::ASSIGN);
+			}
+
+			return nullptr;
+		}
+
 		std::unique_ptr<AstElement> createStmt(AstElement* rhs)
 		{
 			if (rhs)

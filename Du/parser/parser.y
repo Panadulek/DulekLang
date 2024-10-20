@@ -48,7 +48,7 @@ using AstPtr = std::unique_ptr<AstElement>;
 %left '+' '-'
 %left '*' '/'
 
-%type <astval> expr decl_expr decl_fun decl_fun_header stmt
+%type <astval> expr expr_index_op decl_expr decl_fun decl_fun_header stmt 
 %type <astlist> expr_list 
 %type <scopeInputList>decl_expr_list
 %type <arrayDecorator> dimension_list
@@ -70,9 +70,10 @@ stmt:
         AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable($1, $3, getActualScope());
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
     }
-    | ID_TOKEN dimension_list '=' expr
+    | expr_index_op '=' expr ';'
     {
-
+        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable($1, $3);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
     }
     | decl_expr ';'
     {
@@ -152,10 +153,9 @@ expr:
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1,  getActualScope(), $3);
         free($1);
     }
-    | ID_TOKEN dimension_list // array operator
+    | expr_index_op // array operator
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp($1, *$2);
-        free($1);
+        $$ = $1;
     }
     | ID_TOKEN '(' ')'
     {
@@ -164,7 +164,13 @@ expr:
         free($1);
     }
 ;
-
+expr_index_op:
+    ID_TOKEN dimension_list // array operator
+    {
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp($1, *$2);
+        free($1);
+    }
+;
 expr_list:
     |
     expr {
