@@ -34,7 +34,7 @@ public:
 	AstElement() = delete;
 	AstElement(AstElement&) = delete;
 	AstElement(AstElement&&) = delete;
-	std::string_view getName() const ;
+	virtual std::string_view getName() const ;
 	const ElementType getAstType();
 	AstElement* getParent() const { return m_parent; }
 	const bool nameIsKeyword();

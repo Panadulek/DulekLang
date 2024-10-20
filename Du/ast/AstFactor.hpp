@@ -140,7 +140,7 @@ class AstFactory
 
 			if (currentScope)
 			{
-				AstElement* scopeMember = currentScope->getElement(lhs);
+				AstElement* scopeMember = AstFactory::ExprFactor().createRef(lhs);
 				if (!scopeMember)
 				{
 					Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, lhs);

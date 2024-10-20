@@ -29,7 +29,7 @@ public:
 		}
 		return std::nullopt;
 	}
-	std::string_view getName() { return m_ref->getName(); }
+	std::string_view getName() const override { return m_ref->getName(); }
 	AstElement* ref()
 	{
 		return m_ref;

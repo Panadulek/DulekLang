@@ -157,7 +157,20 @@ class llvmStmtGenerator
 		{
 			llvm::Value* exprInstruction = generateExprInstruction(assgn->rhs(), b);
 			auto bb = b.GetInsertBlock();
-			llvm::Value* variable = getAllocInst(assgn->lhs()->getName(), b);
+			AstElement* lhs = assgn->lhs();
+			llvm::Value* variable = nullptr;
+			if (AstExpr* expr = ast_element_cast<AstExpr>(lhs))
+			{
+				if (expr->op() == AstExpr::Operation::Reference && expr->right())
+				{
+
+					variable = getAllocInst(expr->right()->getName(), b);
+				}
+				else
+					assert(0 && "Expr != Reference || expr->right == null");
+			}
+			else
+				 variable = getAllocInst(assgn->lhs()->getName(), b);
 			b.CreateStore(exprInstruction, variable, false);
 		}
 	}
