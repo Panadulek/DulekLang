@@ -46,25 +46,28 @@ class llvmStmtGenerator
 		AstExpr* left = ast_element_cast<AstExpr>(expr->left());
 		if (left && left->op() == AstExpr::Operation::Reference)
 		{
-			llvm::Value* arr = generateExprInstruction(left, b);
-			llvm::Type* elementType = arr->getType();
-			llvm::Type* _elementType = elementType;
-			if (AstExpr* _expr = ast_element_cast<AstExpr>(expr->right()))
+			if (AstRef* ref = ast_element_cast<AstRef>(left->right()))
 			{
-				auto dims = AstExpr::transformExprToDimsArray(_expr);
-				std::vector<llvm::Value*> llvmIdxs;
-				if (dims)
+				if(AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(ref->ref()))
 				{
-					for (auto it = dims->begin(); it != dims->end(); ++it)
+					if (AstExpr* _expr = ast_element_cast<AstExpr>(expr->right()))
 					{
-						if (it != dims->begin())
-							elementType = elementType->getPointerTo();
-						llvmIdxs.push_back(generateExprInstruction(it->get()->getExpr(), b));
+						llvm::Value* arr = generateExprInstruction(left, b);
+						llvm::ArrayType* at = generateArrayTypeInstruction(decl->getVarType(), b);
+						auto dims = AstExpr::transformExprToDimsArray(_expr);
+						std::vector<llvm::Value*> llvmIdxs;
+						if (dims)
+						{
+							for (auto it = dims->begin(); it != dims->end(); ++it)
+							{
+
+								llvmIdxs.push_back(generateExprInstruction(it->get()->getExpr(), b));
+							}
+							return b.CreateGEP(at, arr, llvmIdxs);
+						}
 					}
-					return b.CreateGEP(_elementType, arr, llvmIdxs);
-					
 				}
-			}			
+			}
 		}
 		return nullptr;
 	}
@@ -201,9 +204,9 @@ class llvmStmtGenerator
 			return b.CreateRet(retVal);
 		}
 	}
-	static llvm::Value* generateDeclArrayInstruction(AstVariableDecl* stmt, llvm::IRBuilder<>& b)
+
+	static llvm::ArrayType* generateArrayTypeInstruction(AstType* type, llvm::IRBuilder<>& b)
 	{
-		AstType* type = stmt->getVarType();
 		if (!type)
 		{
 			assert(0);
@@ -215,12 +218,12 @@ class llvmStmtGenerator
 		{
 			std::vector<llvm::Value*> dims(type->getDimensionCounter());
 			std::size_t idx = 0;
-			for(auto it = begin.value(); it != end.value(); it++)
+			for (auto it = begin.value(); it != end.value(); it++)
 			{
 				dims[idx++] = generateExprInstruction(it->get()->getExpr(), b);
 			}
 			llvm::ArrayType* at = nullptr;
-	
+
 			for (std::size_t i = dims.size() - 1; i != UINT64_MAX; --i)
 			{
 				if (llvm::ConstantInt* _const = llvm::dyn_cast<llvm::ConstantInt>(dims[i]))
@@ -233,11 +236,24 @@ class llvmStmtGenerator
 					return nullptr;
 				}
 			}
-			if (at)
-				return dump_op(b.CreateAlloca(at, nullptr, stmt->getName()));
+			return at;
 		}
+	}
+
+	static llvm::Value* generateDeclArrayInstruction(AstVariableDecl* stmt, llvm::IRBuilder<>& b)
+	{
+		AstType* type = stmt->getVarType();
+		if (!type)
+		{
+			assert(0);
+			return nullptr;
+		}
+		if (llvm::ArrayType* at = generateArrayTypeInstruction(type, b))
+			return b.CreateAlloca(at, nullptr, stmt->getName());
 		return nullptr;
 	}
+		
+	
 	static llvm::Value* generateDeclInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
 	{
 		llvm::Value* val = nullptr;

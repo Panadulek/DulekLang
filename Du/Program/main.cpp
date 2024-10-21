@@ -33,7 +33,8 @@ int main(int argc, char** argv)
 		return -1;
 	LlvmGen gen(filename.data());
 	gen.generateIr();
-	std::unique_ptr<llvmOutputProcess> m_outputProcess = std::make_unique<llvmIrOutputProcess>(gen, "main");
+	std::unique_ptr<llvmAsmOutputProcess> m_outputProcess = std::make_unique<llvmAsmOutputProcess>(gen, "main", llvmAsmOutputProcess::TargetPlatform::X86);
+	m_outputProcess->process();
 	return 0;
 }
 

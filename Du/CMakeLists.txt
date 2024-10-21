@@ -75,7 +75,6 @@ set(LLVM_INCLUDE_DIR ${LLVM_DIR}/include)
 set(LLVM_LIB_DIR_DEBUG ${LLVM_DIR}/lib/debug)
 
 
-
 include_directories(${LLVM_INCLUDE_DIR})
 link_directories(${LLVM_LIB_DIR_DEBUG})
 file(GLOB LLVM_LIB_FILE ${LLVM_LIB_DIR_DEBUG}/*.lib)
