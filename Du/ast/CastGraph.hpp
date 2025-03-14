@@ -27,7 +27,7 @@ class CastGraph
 		subVector.emplace_back({ BasicTypes::U16, ConversionType::EXTEND | ConversionType::SIGN });
 		subVector.emplace_back({ BasicTypes::U32, ConversionType::EXTEND | ConversionType::SIGN});
 		subVector.emplace_back({ BasicTypes::U64, ConversionType::EXTEND | ConversionType::SIGN});
-		subVector.emplace_back({ BasicTypes::U8, ConversionType::SIGN | ConversionType::SIGN });
+		subVector.emplace_back({ BasicTypes::U8, ConversionType::SIGN });
 		subVector.emplace_back({ BasicTypes::F32, ConversionType::EXTEND });
 		subVector.emplace_back({ BasicTypes::F64, ConversionType::EXTEND });
 	}
