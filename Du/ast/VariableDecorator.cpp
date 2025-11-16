@@ -1,7 +1,9 @@
 #include "VariableDecorator.hpp"
 #include "AstExpr.hpp"
-ArrayDecorator::Dimension::Dimension(AstExpr* expr) : m_dimension(expr)
+ArrayDecorator::Dimension::Dimension(AstExpr* expr, bool owner) : m_dimension(expr), m_owner(owner)
 {
+	if (!expr)
+		return;
 	switch (expr->op())
 	{
 	case AstExpr::Operation::ConstValue:
@@ -21,6 +23,14 @@ AstExpr* ArrayDecorator::Dimension::getExpr()
 
 AstExpr* ArrayDecorator::Dimension::releaseExpr()
 {
+	m_owner = false;
 	return m_dimension.release();
 }
 
+ArrayDecorator::Dimension::~Dimension()
+{
+	if (!m_owner)
+	{
+		m_dimension.release();
+	}
+}

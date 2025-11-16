@@ -55,7 +55,7 @@ class llvmStmtGenerator
 						llvm::Value* arr = generateExprInstruction(left, b);
 						llvm::ArrayType* at = generateArrayTypeInstruction(decl->getVarType(), b);
 						auto dims = AstExpr::transformExprToDimsArray(_expr);
-						std::vector<llvm::Value*> llvmIdxs;
+						std::vector<llvm::Value*> llvmIdxs{llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), 0)};
 						if (dims)
 						{
 							for (auto it = dims->begin(); it != dims->end(); ++it)

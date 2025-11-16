@@ -12,7 +12,7 @@ std::unique_ptr<AstExpr::IndexingArray> AstExpr::createArrayFromIndexingOp()
 		}
 		else if (AstExpr* expr = ast_element_cast<AstExpr>(Iterator->left()))
 		{
-			arr->emplace_back(std::make_unique<ArrayDecorator::Dimension>(expr));
+			arr->emplace_back(std::make_unique<ArrayDecorator::Dimension>(expr, false));
 			Iterator = ast_element_cast<AstExpr>(Iterator->right());
 		}
 	}

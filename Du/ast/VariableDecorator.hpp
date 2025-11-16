@@ -9,10 +9,12 @@ namespace ArrayDecorator
 	{
 		std::unique_ptr<AstExpr> m_dimension;
 		bool m_isDynamic;
+		bool m_owner;
 	public:
-		Dimension(AstExpr* expr);
+		Dimension(AstExpr* expr, bool owner = true);
 		AstExpr* getExpr();
 		AstExpr* releaseExpr();
+		~Dimension();
 	};
 
 
