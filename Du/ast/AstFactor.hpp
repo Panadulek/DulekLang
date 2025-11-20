@@ -12,6 +12,7 @@
 #include "AstReference.h"
 #include "../Terminal/Terminal.hpp"
 #include "AstCallFun.hpp"
+#include "CastGraph.hpp"
 extern AstScope* getActualScope();
 
 class AstBuildSystem;
@@ -65,6 +66,12 @@ class AstFactory
 			}
 			return new AstExpr(nullptr, AstExpr::Operation::Reference, new AstRef(element));
 		}
+
+		AstExpr* createCast(AstElement* exprToCast, CastOp op)
+		{
+			return new AstExpr(exprToCast, AstExpr::Operation::Cast, op);
+		}
+
 		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
 		{
 			AstElement* element = beginContainer->getElement(funName);

@@ -1,5 +1,4 @@
 #include "ScopeDecorator.hpp"
-#include "ScopeDecorator.hpp"
 #include "AstScope.hpp"
 #include "AstType.hpp"
 using Function = ScopeDecorator::Function;

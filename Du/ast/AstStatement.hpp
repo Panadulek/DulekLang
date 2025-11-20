@@ -23,6 +23,7 @@ public:
 	explicit AstStatement(AstVariableDecl*, AstExpr*);
 	const STMT_TYPE getStmtType() const { return m_stmtType; }
 	AstExpr* rhs() { return m_rhs.get(); }
+	void setWrappedRhs(AstExpr* expr) { m_rhs.release(); m_rhs.reset(expr); }
 	AstElement* lhs() { return m_lhs; }
 	~AstStatement()
 	{

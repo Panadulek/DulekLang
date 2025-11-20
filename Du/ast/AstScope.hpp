@@ -11,7 +11,7 @@
 #include "BasicType.hpp"
 #include "ScopeDecorator.hpp"
 #include "AstCast.hpp"
-
+#include <unordered_map>
 #include <optional>
 
 class AstScope final : public AstElement
@@ -22,6 +22,7 @@ class AstScope final : public AstElement
 
 	std::vector<std::unique_ptr<AstElement>> m_elements;
 	std::vector<std::unique_ptr<AstElement>> m_stmts;
+	std::unordered_map<std::string_view, AstElement*> m_lookupMap;
 	std::unique_ptr<Function> m_function;
 	
 	template<typename Container, typename Predicate>
@@ -44,7 +45,7 @@ class AstScope final : public AstElement
 	
 	auto getFilteredViewByNotKeywordName();
 	
-	static AstScope::Global& getGlobal();
+	static Global& getGlobal();
 
 
 

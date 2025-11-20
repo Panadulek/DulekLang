@@ -1,0 +1,14 @@
+main() -> i8 {
+    
+
+    i8 x = 10;
+    i16 y = 15;
+    i16 z = x + y;
+
+    i8 mojaTablica[20]; 
+    
+    mojaTablica[0] = x;
+    mojaTablica[1] = z;
+
+    return 0;
+}

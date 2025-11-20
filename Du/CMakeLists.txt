@@ -52,7 +52,9 @@ add_executable (Du
 
 
 target_include_directories(Du PRIVATE ${3RD_PARTY_INCLUDES}/gnu)
+target_include_directories(Du PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/semantic_analyzer)
 target_link_libraries(Du PRIVATE DuAst)
+target_include_directories(DuAst PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/semantic_analyzer)
 set_target_properties(DuAst PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${LIBS_OUTPUT_DIR}
     LIBRARY_OUTPUT_DIRECTORY ${LIBS_OUTPUT_DIR}

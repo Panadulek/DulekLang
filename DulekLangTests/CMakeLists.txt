@@ -14,7 +14,7 @@ ExternalProject_Add(
         -DCMAKE_INSTALL_PREFIX=${GTEST_INSTALL_DIR}
         -DCMAKE_CXX_STANDARD=20
         -DCMAKE_CXX_STANDARD_REQUIRED=ON
-        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_BUILD_TYPE=Debug
 )
 
 
@@ -39,19 +39,9 @@ add_executable(DulekLangTests
 target_include_directories(DulekLangTests PRIVATE ${GTEST_DIR_INCLUDE})
 if (WIN32)
     message("DEBUG:${GTEST_DIR_LIB}")
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-        set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")        
-        target_link_libraries(DulekLangTests PRIVATE "${GTEST_DIR_LIB}/gtestd.lib" "${GTEST_DIR_LIB}/gtest_maind.lib" "${GTEST_DIR_LIB}/gmockd.lib" "${GTEST_DIR_LIB}/gmock_maind.lib")
-    else()
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
-        set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MD")
-
-        target_link_libraries(DulekLangTests PRIVATE
-            "${GTEST_DIR_LIB}/gtestd.lib" "${GTEST_DIR_LIB}/gtest_maind.lib" "${GTEST_DIR_LIB}/gmockd.lib" "${GTEST_DIR_LIB}/gmock_maind.lib"
-        )
-    endif()
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+    target_link_libraries(DulekLangTests PRIVATE "${GTEST_DIR_LIB}/gtestd.lib" "${GTEST_DIR_LIB}/gtest_maind.lib" "${GTEST_DIR_LIB}/gmockd.lib" "${GTEST_DIR_LIB}/gmock_maind.lib")
 endif()
 add_dependencies(DulekLangTests googletest)
 

@@ -33,7 +33,7 @@ private:
 	{
 		return getGlobalScopeForFile(getCurrentFilename());
 	}
-
+public:
 	Global()
 	{
 		m_connectBasicTypesWithId.insert({ "i8", BasicTypes::I8 });
@@ -102,7 +102,6 @@ private:
 		m_connectFileWithGlobalScope.clear();
 	}
 	friend struct AstScope::GlobalApi;
-	friend class std::unique_ptr<Global> std::make_unique<Global>();
 };
 /*
  * ---GLOBAL
@@ -137,7 +136,11 @@ AstElement* AstScope::addElement(std::unique_ptr<AstElement>&& element)
 			auto filtredView = getFilteredViewByNotKeywordName();
 			if(isNewElementUniqueByName(filtredView, element))
 			{
+
 				m_elements.emplace_back(std::move(element));
+				auto decl = ast_unique_element_cast<AstVariableDecl>(m_elements.back());
+				if (decl)
+					m_lookupMap.insert({ decl->getName(), decl });
 				return m_elements.back().get();
 			}
 			else

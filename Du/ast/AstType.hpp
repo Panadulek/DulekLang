@@ -4,7 +4,6 @@
 #include <optional>
 #include <string>
 #include <unordered_set>
-#include "AstScope.hpp"
 #include <cassert>
 class AstType
 {

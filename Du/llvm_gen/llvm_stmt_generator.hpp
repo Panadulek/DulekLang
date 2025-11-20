@@ -12,6 +12,7 @@
 #include <format>
 #include "../ast/AstCallFun.hpp"
 #include "llvm_cache.hpp"
+#include "../ast/CastGraph.hpp"
 class llvmStmtGenerator
 {
 	static llvm::Value* dump_op(llvm::Value* val)
@@ -71,6 +72,66 @@ class llvmStmtGenerator
 		}
 		return nullptr;
 	}
+	static llvm::Value* generateCast(AstExpr* expr, llvm::IRBuilder<>& b)
+	{
+		if (!expr || !expr->getCastOp().has_value())
+			return nullptr;
+		AstElement* left = expr->left();
+		if (left)
+		{
+			llvm::Value* value = nullptr;
+			if (auto subExpr = ast_element_cast<AstExpr>(left))
+			{
+				value = generateExprInstruction(subExpr, b);
+			}
+			else 
+				value = getValueFromExpr(left, b);
+			if (!value)
+				return nullptr;
+			AstType* type = expr->getType();
+			auto srcValue =  value->getType()->isPointerTy() ? b.CreateLoad(getLlvmCache<>().getType(value), value) : value;
+			if (type)
+			{
+				llvm::Type* destType = LlvmTypeGenerator::convertAstToLlvmType(type->getType());
+				auto op = expr->getCastOp().value();
+				if (op & CastOp::SIToFP) {
+					return b.CreateSIToFP(srcValue, destType, "cast_sitofp");
+				}
+				if (op & CastOp::UIToFP) {
+					return b.CreateUIToFP(srcValue, destType, "cast_uitofp");
+				}
+				if (op & CastOp::FPToSI) {
+					return b.CreateFPToSI(srcValue, destType, "cast_fptosi");
+				}
+				if (op & CastOp::FPToUI) {
+					return b.CreateFPToUI(srcValue, destType, "cast_fptoui");
+				}
+				if (op & CastOp::FPExt) {
+					return b.CreateFPExt(srcValue, destType, "cast_fpext");
+				}
+				if (op & CastOp::FPTrunc) {
+					return b.CreateFPTrunc(srcValue, destType, "cast_fptrunc");
+				}
+				if (op & CastOp::SExt) {
+					return b.CreateSExt(srcValue, destType, "cast_sext");
+				}
+				if (op & CastOp::ZExt) {
+					return b.CreateZExt(srcValue, destType, "cast_zext");
+				}
+				if (op & CastOp::Trunc) {
+					return b.CreateTrunc(srcValue, destType, "cast_trunc");
+				}
+				if (op & CastOp::BitCast) {
+					if (srcValue->getType() != destType) {
+						return b.CreateBitCast(srcValue, destType, "cast_bitcast");
+					}
+					return srcValue; // No-op
+				}
+			}
+			return srcValue;
+		}
+		return nullptr;
+	}
 	static llvm::Value* getValueFromExpr(AstElement* element, llvm::IRBuilder<>& b)
 	{
 		if (AstConst* aconst = ast_element_cast<AstConst>(element))
@@ -91,8 +152,8 @@ class llvmStmtGenerator
 		}
 		else if (AstRef* ref = ast_element_cast<AstRef>(element))
 		{
-			llvm::Value* variable = getLlvmCache<>().getValue(ref);
-			return variable;
+			return  getLlvmCache<>().getValue(ref);
+		
 		}
 		else if (AstCallFun* callFn = dynamic_cast<AstCallFun*>(element))
 		{
@@ -117,11 +178,41 @@ class llvmStmtGenerator
 	{
 		return nullptr;
 	}
+
+	static llvm::Value* generateBinaryOpInstruction(llvm::Value* l, llvm::Value* r, llvm::IRBuilder<>& b, AstExpr::Operation op, std::string_view description)
+	{
+		if (l && l->getType()->isPointerTy())
+		{
+			l = b.CreateLoad(getLlvmCache<>().getType(l), l);
+		}
+		if (r && r->getType()->isPointerTy())
+		{
+			r = b.CreateLoad(getLlvmCache<>().getType(r), r);
+		}
+		switch (op)
+		{
+			case AstExpr::Operation::Addition:
+				return b.CreateAdd(l, r, description);
+			case AstExpr::Operation::Subtraction:
+				return b.CreateSub(l,r, description);
+			case AstExpr::Operation::Multiplication:
+				return b.CreateMul(l, r, description);
+			case AstExpr::Operation::Division:
+				return b.CreateSDiv(l, r, description);
+			case AstExpr::Operation::Unary_negation:
+				return b.CreateNeg(l, description);
+		}
+	}
+
 	static llvm::Value* generateExprInstruction(AstExpr* expr, llvm::IRBuilder<>& b)
 	{
 		if (expr->op() == AstExpr::Operation::Arr_Indexing)
 		{
 			return generateArrayIndexing(expr, b);
+		}
+		else if (expr->op() == AstExpr::Operation::Cast)
+		{
+			return generateCast(expr, b);
 		}
 		else
 		{
@@ -131,26 +222,33 @@ class llvmStmtGenerator
 #ifdef _DEBUG
 				std::format("{}, {} and {}", static_cast<uint8_t>(expr->op()), expr->left() ? expr->left()->getName() : "null",
 					expr->right() ? expr->right()->getName() : "null");
+			if (l)
+			{
+				llvm::errs() << "left: \n";
+				l->dump();
+				l->getType()->dump();
+			}
+			if (r)
+			{
+				llvm::errs() << "right: \n";
+				r->dump();
+				r->getType()->dump();
+			}
 #else
 				"";
 #endif
-			switch (expr->op())
+		
+			if (expr->isBinaryOp())
 			{
-			case AstExpr::Operation::Addition:
-				return b.CreateAdd(l, r, description);
-			case AstExpr::Operation::Subtraction:
-				return b.CreateSub(l, r, description);
+				return generateBinaryOpInstruction(l, r, b, expr->op(), description);
+			}
+			switch (expr->op())
+			{		
+			case AstExpr::Operation::Call_fun:
+				return l;
 			case AstExpr::Operation::Reference:
 			case AstExpr::Operation::ConstValue:
 				return r;
-			case AstExpr::Operation::Multiplication:
-				return b.CreateMul(l, r, description);
-			case AstExpr::Operation::Division:
-				return b.CreateSDiv(l, r, description);
-			case AstExpr::Operation::Unary_negation:
-				return b.CreateNeg(l, description);
-			case AstExpr::Operation::Call_fun:
-				return l;
 			default:
 				break;
 			}
@@ -203,6 +301,7 @@ class llvmStmtGenerator
 		{
 			return b.CreateRet(retVal);
 		}
+		return nullptr;
 	}
 
 	static llvm::ArrayType* generateArrayTypeInstruction(AstType* type, llvm::IRBuilder<>& b)
@@ -238,9 +337,10 @@ class llvmStmtGenerator
 			}
 			return at;
 		}
+		return nullptr;
 	}
 
-	static llvm::Value* generateDeclArrayInstruction(AstVariableDecl* stmt, llvm::IRBuilder<>& b)
+	static llvm::Type* generateDeclArrayInstruction(AstVariableDecl* stmt, llvm::IRBuilder<>& b)
 	{
 		AstType* type = stmt->getVarType();
 		if (!type)
@@ -248,12 +348,12 @@ class llvmStmtGenerator
 			assert(0);
 			return nullptr;
 		}
-		if (llvm::ArrayType* at = generateArrayTypeInstruction(type, b))
-			return b.CreateAlloca(at, nullptr, stmt->getName());
-		return nullptr;
+		return generateArrayTypeInstruction(type, b); 
 	}
 		
-	
+
+
+
 	static llvm::Value* generateDeclInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
 	{
 		llvm::Value* val = nullptr;
@@ -261,23 +361,25 @@ class llvmStmtGenerator
 		{
 			AstExpr* rhs = stmt->rhs();
 			AstType* type = decl->getVarType();
+			llvm::Type* generatedType = nullptr;
 			if (type)
 			{
 				if (type->isArray())
 				{
-					val = generateDeclArrayInstruction(decl, b);
+					generatedType = generateDeclArrayInstruction(decl, b);
 				}
 				else
 				{
-					val = b.CreateAlloca(LlvmTypeGenerator::convertAstToLlvmType(type->getType()), nullptr, decl->getName());
+					generatedType = LlvmTypeGenerator::convertAstToLlvmType(type->getType());
 				}
+				val = b.CreateAlloca(generatedType, nullptr, decl->getName());
 			}
 			else
 			{
 				assert(0);
 				return nullptr;
 			}
-			getLlvmCache<>().insertElement(val, decl);
+			getLlvmCache<>().insertElement(val, decl, generatedType);
 			if (rhs)
 			{
 				llvm::Value* initVal = generateExprInstruction(rhs, b);

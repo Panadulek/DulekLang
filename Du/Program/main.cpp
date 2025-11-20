@@ -18,6 +18,7 @@
 #include "../llvm_gen/llvm_output_process.h"
 #include "../Terminal/Terminal.hpp"
 #include "../ast/AstType.hpp"
+#include "../semantic_analyzer/semantic_analyzer.h"
 
 #define NOMINMAX
 
@@ -31,6 +32,8 @@ int main(int argc, char** argv)
 	parser.parse();
 	if (Terminal::Output()->errorHappend())
 		return -1;
+	SemanticAnalyzer analyzer(filename);
+	analyzer.analyzie();
 	LlvmGen gen(filename.data());
 	gen.generateIr();
 	std::unique_ptr<llvmAsmOutputProcess> m_outputProcess = std::make_unique<llvmAsmOutputProcess>(gen, "main", llvmAsmOutputProcess::TargetPlatform::X86);

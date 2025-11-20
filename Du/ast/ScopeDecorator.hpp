@@ -1,9 +1,9 @@
 #pragma once
-#include <memory>;
+#include <memory>
 #include "BasicType.hpp"
-#include <vector>;
+#include <vector>
 #include "AstElement.hpp"
-#include "span"
+#include <span>
 #include "AstList.hpp"
 
 class AstType;

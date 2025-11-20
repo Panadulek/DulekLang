@@ -23,6 +23,8 @@ public:
 	void generateIr()
 	{
 		AstScope* scope = AstScope::GlobalApi::getGlobalScopeForFile(m_filename);
+		if (!scope)
+			return;
 		auto globalChilds = scope->getElements();
 		for (auto &it : globalChilds)
 		{
