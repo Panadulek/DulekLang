@@ -4,6 +4,12 @@
 #include <functional>
 #include <array>
 class AstScope;
+
+enum class ValueCategory : uint8_t {
+	RValue = 0, // Wartość tymczasowa (nie ma stałego adresu)
+	LValue      // Wartość-lokator (posiada adres w pamięci, można do niej przypisać)
+};
+
 class AstElement
 {
 public:
@@ -27,6 +33,7 @@ private:
 	ElementType m_astType;
 	AstElement* m_parent;
 protected:
+	ValueCategory m_value_category = ValueCategory::RValue;
 	AstElement(std::string_view, ElementType, AstElement* parent);
 	AstElement(std::string_view, ElementType);
 
@@ -38,6 +45,9 @@ public:
 	const ElementType getAstType();
 	AstElement* getParent() const { return m_parent; }
 	const bool nameIsKeyword();
+	void setValueCategory(ValueCategory category) { m_value_category = category; }
+	ValueCategory getValueCategory() const { return m_value_category; }
+	bool isLValue() const { return m_value_category == ValueCategory::LValue; }
 	virtual ~AstElement() = default;
 };
 

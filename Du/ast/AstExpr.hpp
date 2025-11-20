@@ -106,6 +106,3 @@ public:
 			delete m_right;
 	}
 };
-
-
-

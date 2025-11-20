@@ -63,8 +63,11 @@ class AstFactory
 			if (!element)
 			{
 				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU001, name);
+				return nullptr;
 			}
-			return new AstExpr(nullptr, AstExpr::Operation::Reference, new AstRef(element));
+			AstExpr* expr = new AstExpr(nullptr, AstExpr::Operation::Reference, new AstRef(element));
+			expr->setValueCategory(ValueCategory::LValue);
+			return expr;
 		}
 
 		AstExpr* createCast(AstElement* exprToCast, CastOp op)
@@ -104,6 +107,9 @@ class AstFactory
 				}
 				if (expr)
 					expr = new AstExpr(createRef(varName), AstExpr::Operation::Arr_Indexing, expr);
+
+				if (expr)
+					expr->setValueCategory(ValueCategory::LValue);
 			}
 			else
 				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, varName);

@@ -7,30 +7,30 @@
 #include <cassert>
 class AstType
 {
-	using ArrayDecorator = ArrayDecorator::Array;
+	using ArrayInfo = ArrayDecorator::Array;
 	BasicTypes m_simpleType;
-	std::unique_ptr<ArrayDecorator> m_arrayDims;
+	std::unique_ptr<ArrayInfo> m_arrayDims;
 	class Cache //implement Cache for Basic Types in future
 	{
 
 	};
 public:
 	AstType(BasicTypes type) : m_simpleType(type), m_arrayDims(nullptr) {}
-	void initArray(ArrayDecorator* arr)
+	void initArray(ArrayInfo* arr)
 	{
 		if (!m_arrayDims)
 			m_arrayDims.reset(arr);
 		else
 			assert(0);
 	}
-	std::optional<ArrayDecorator::const_iterator> beginArrayRange() const
+	std::optional<ArrayInfo::const_iterator> beginArrayRange() const
 	{
 		if (!m_arrayDims)
 			return std::nullopt;
 		return m_arrayDims->begin();
 	}
 
-	std::optional<ArrayDecorator::const_iterator> endArrayRange() const
+	std::optional<ArrayInfo::const_iterator> endArrayRange() const
 	{
 		if (!m_arrayDims)
 			return std::nullopt;

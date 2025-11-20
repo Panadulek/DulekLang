@@ -260,6 +260,10 @@ class llvmStmtGenerator
 		if (assgn && assgn->lhs() && assgn->rhs())
 		{
 			llvm::Value* exprInstruction = generateExprInstruction(assgn->rhs(), b);
+			if (assgn->rhs()->isLValue())
+			{
+				exprInstruction = b.CreateLoad(getLlvmCache<>().getType(exprInstruction), exprInstruction);
+			}
 			auto bb = b.GetInsertBlock();
 			AstElement* lhs = assgn->lhs();
 			llvm::Value* variable = nullptr;

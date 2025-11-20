@@ -9,7 +9,9 @@ class AstRef : public AstElement
 	AstElement* m_ref;
 public:
 	AstRef(AstElement* ref) : m_ref(ref), AstElement("Reference", AstElement::ElementType::REFERENCE) 
-	{}
+	{
+		setValueCategory(ValueCategory::LValue);
+	}
 	std::optional<BasicTypes> getType()
 	{
 		if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(m_ref))
