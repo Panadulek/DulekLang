@@ -65,6 +65,7 @@ public:
 		case BasicTypes::U64:
 		case BasicTypes::F32:
 		case BasicTypes::F64:
+		case BasicTypes::BOOL:
 			return true;
 		default:
 			return false;

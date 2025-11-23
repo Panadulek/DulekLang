@@ -13,6 +13,7 @@ enum class BasicTypes : uint64_t
 	F32,
 	F64,
 	STR,
+	BOOL,
 	VOID_TYPE,
 	USER_TYPE,
 	LAST_LABEL

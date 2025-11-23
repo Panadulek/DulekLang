@@ -59,7 +59,9 @@
      RET_STMT = 259,
      ID_TOKEN = 260,
      CONST_STR = 261,
-     NUMBER_TOKEN = 262
+     NUMBER_TOKEN = 262,
+     TRUE_TOKEN = 263,
+     FALSE_TOKEN = 264
    };
 #endif
 
@@ -82,7 +84,7 @@ typedef union YYSTYPE
 
 
 /* Line 1676 of yacc.c  */
-#line 86 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 88 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

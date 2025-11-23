@@ -8,7 +8,7 @@
 
 enum class CastOp : uint32_t
 {
-	NoOp = 0x0000, // Zmieniono NONE na NoOp (czêste w kompilatorach)
+	NoOp = 0x0000, 
 	Trunc = 0x0001,
 	SExt = 0x0002,
 	ZExt = 0x0004,
@@ -22,19 +22,15 @@ enum class CastOp : uint32_t
 	Custom = 0x0400,
 };
 
-// Operator bitowy OR (constexpr dla optymalizacji)
 constexpr CastOp operator|(CastOp a, CastOp b) {
 	return static_cast<CastOp>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
 }
 
-// Operator bitowy AND (przydatny do sprawdzania flag)
 constexpr bool operator&(CastOp a, CastOp b) {
 	return (static_cast<uint32_t>(a) & static_cast<uint32_t>(b)) != 0;
 }
 
-// ***************************************************************
-// Klasa CastGraph - teraz jako statyczny dostarczyciel wiedzy
-// ***************************************************************
+
 class CastGraph
 {
 public:
@@ -112,7 +108,7 @@ private:
 		add(BasicTypes::I64, BasicTypes::U16, CastOp::Trunc | CastOp::BitCast);
 		add(BasicTypes::I64, BasicTypes::U32, CastOp::Trunc | CastOp::BitCast);
 		add(BasicTypes::I64, BasicTypes::U64, CastOp::BitCast);
-		add(BasicTypes::I64, BasicTypes::F32, CastOp::SIToFP | CastOp::Trunc); // Uwaga: dziwna operacja, ale zachowana z orygina³u
+		add(BasicTypes::I64, BasicTypes::F32, CastOp::SIToFP | CastOp::Trunc); // Uwaga: dziwna operacja, ale zachowana z oryginaï¿½u
 		add(BasicTypes::I64, BasicTypes::F64, CastOp::SIToFP);
 
 		// --- Konwersje U8 ---
@@ -156,18 +152,18 @@ private:
 		add(BasicTypes::U64, BasicTypes::U8, CastOp::Trunc);
 		add(BasicTypes::U64, BasicTypes::U16, CastOp::Trunc);
 		add(BasicTypes::U64, BasicTypes::U32, CastOp::Trunc);
-		add(BasicTypes::U64, BasicTypes::F32, CastOp::UIToFP | CastOp::Trunc); // Uwaga: z orygina³u
+		add(BasicTypes::U64, BasicTypes::F32, CastOp::UIToFP | CastOp::Trunc); // Uwaga: z oryginaï¿½u
 		add(BasicTypes::U64, BasicTypes::F64, CastOp::UIToFP);
 
 		// --- Konwersje F32 ---
 		add(BasicTypes::F32, BasicTypes::I8, CastOp::FPToSI | CastOp::Trunc);
 		add(BasicTypes::F32, BasicTypes::I16, CastOp::FPToSI | CastOp::Trunc);
 		add(BasicTypes::F32, BasicTypes::I32, CastOp::FPToSI);
-		add(BasicTypes::F32, BasicTypes::I64, CastOp::FPToSI | CastOp::FPExt); // Uwaga: z orygina³u
+		add(BasicTypes::F32, BasicTypes::I64, CastOp::FPToSI | CastOp::FPExt); // Uwaga: z oryginaï¿½u
 		add(BasicTypes::F32, BasicTypes::U8, CastOp::FPToUI | CastOp::Trunc);
 		add(BasicTypes::F32, BasicTypes::U16, CastOp::FPToUI | CastOp::Trunc);
 		add(BasicTypes::F32, BasicTypes::U32, CastOp::FPToUI);
-		add(BasicTypes::F32, BasicTypes::U64, CastOp::FPToUI | CastOp::FPExt); // Uwaga: z orygina³u
+		add(BasicTypes::F32, BasicTypes::U64, CastOp::FPToUI | CastOp::FPExt); // Uwaga: z oryginaï¿½u
 		add(BasicTypes::F32, BasicTypes::F64, CastOp::FPExt);
 
 		// --- Konwersje F64 ---
@@ -180,6 +176,29 @@ private:
 		add(BasicTypes::F64, BasicTypes::U32, CastOp::FPToUI | CastOp::Trunc);
 		add(BasicTypes::F64, BasicTypes::U64, CastOp::FPToUI);
 		add(BasicTypes::F64, BasicTypes::F32, CastOp::FPTrunc);
+
+		// --- Konwersje BOOL ---
+		add(BasicTypes::BOOL, BasicTypes::I8, CastOp::ZExt);
+		add(BasicTypes::BOOL, BasicTypes::I16, CastOp::ZExt);
+		add(BasicTypes::BOOL, BasicTypes::I32, CastOp::ZExt);
+		add(BasicTypes::BOOL, BasicTypes::I64, CastOp::ZExt);
+		add(BasicTypes::BOOL, BasicTypes::U8, CastOp::ZExt);
+		add(BasicTypes::BOOL, BasicTypes::U16, CastOp::ZExt);
+		add(BasicTypes::BOOL, BasicTypes::U32, CastOp::ZExt);
+		add(BasicTypes::BOOL, BasicTypes::U64, CastOp::ZExt);
+		add(BasicTypes::BOOL, BasicTypes::F32, CastOp::UIToFP);
+		add(BasicTypes::BOOL, BasicTypes::F64, CastOp::UIToFP);
+
+		add(BasicTypes::I8,   BasicTypes::BOOL, CastOp::Trunc);
+		add(BasicTypes::I16,  BasicTypes::BOOL, CastOp::Trunc);
+		add(BasicTypes::I32,  BasicTypes::BOOL, CastOp::Trunc);
+		add(BasicTypes::I64,  BasicTypes::BOOL, CastOp::Trunc);
+		add(BasicTypes::U8,   BasicTypes::BOOL, CastOp::Trunc);
+		add(BasicTypes::U16,  BasicTypes::BOOL, CastOp::Trunc);
+		add(BasicTypes::U32,  BasicTypes::BOOL, CastOp::Trunc);
+		add(BasicTypes::U64,  BasicTypes::BOOL, CastOp::Trunc);
+		add(BasicTypes::F32,  BasicTypes::BOOL, CastOp::FPToUI);
+		add(BasicTypes::F64,  BasicTypes::BOOL, CastOp::FPToUI);
 
 		return t;
 	}

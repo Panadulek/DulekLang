@@ -140,6 +140,8 @@ class llvmStmtGenerator
 			{
 			case BasicTypes::U64:
 				return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(aconst->getType()), aconst->get_uint64_t_value());
+			case BasicTypes::BOOL:
+				return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(aconst->getType()), aconst->get_bool_value());
 			case BasicTypes::STR:
 			{
 				

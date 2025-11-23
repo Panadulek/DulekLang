@@ -34,6 +34,8 @@ public:
 			{
 
 			}
+			case BasicTypes::BOOL:
+				return llvm::dyn_cast<llvm::Type>(llvm::Type::getInt1Ty(getContext()));
 			default:
 				return nullptr;
 

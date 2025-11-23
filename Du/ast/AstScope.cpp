@@ -47,6 +47,7 @@ public:
 		m_connectBasicTypesWithId.insert({ "f32", BasicTypes::F32 });
 		m_connectBasicTypesWithId.insert({ "f64", BasicTypes::F64 });
 		m_connectBasicTypesWithId.insert({ "str", BasicTypes::STR });
+		m_connectBasicTypesWithId.insert({ "bool" , BasicTypes::BOOL });
 	}
 	bool addFile(std::string_view filename)
 	{

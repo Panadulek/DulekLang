@@ -15,6 +15,14 @@
 return RET_STMT;
 }
 
+"true" {
+return TRUE_TOKEN;
+}
+
+"false" {
+return FALSE_TOKEN;
+}
+
 \"([^\"\\]|\\.)*\" {
     char* str = yytext;
     const size_t len = strlen(str);
@@ -45,7 +53,7 @@ return ID_TOKEN;
 "]" {return ']';}
 "=" {return '=';}
 
-[ \t\n]+ { /* Ignoruj bia³e znaki */ }
+[ \t\n]+ { /* Ignoruj biaï¿½e znaki */ }
 .       {  }
 
 

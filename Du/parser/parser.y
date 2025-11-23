@@ -44,6 +44,7 @@ using AstPtr = std::unique_ptr<AstElement>;
 %token ARROW_TOKEN RET_STMT
 %token<strval> ID_TOKEN CONST_STR
 %token<intval> NUMBER_TOKEN
+%token TRUE_TOKEN FALSE_TOKEN
 %debug
 %left '+' '-'
 %left '*' '/'
@@ -138,6 +139,14 @@ expr:
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createUnsignedConst($1);
     }
+    | TRUE_TOKEN
+    {
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(true);
+    }
+    | FALSE_TOKEN
+    {
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(false);
+    }
     | CONST_STR
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createStrConst($1);
@@ -229,7 +238,7 @@ decl_fun_header:
         auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $5, nullptr);
         auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
         AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
-        $$ = funRawPtr;  // U¿ywasz tutaj AstElement*
+        $$ = funRawPtr;  // Uï¿½ywasz tutaj AstElement*
         free($1);
     } 
     |
@@ -238,7 +247,7 @@ decl_fun_header:
         auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $6, $3);
         auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
         AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
-        $$ = funRawPtr;  // U¿ywasz tutaj AstElement*
+        $$ = funRawPtr;  // Uï¿½ywasz tutaj AstElement*
         free($1);
     } 
 ;
