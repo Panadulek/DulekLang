@@ -1,9 +1,15 @@
 %{
-#include "parser.hpp"
+#include "parser.hpp" 
 #include <string>
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+
+
+typedef yy::parser::token token;
+
+
+#define YY_DECL int yylex(yy::parser::semantic_type *yylval)
 
 #ifdef _WIN32
 #include <io.h>
@@ -12,20 +18,23 @@
 #endif
 %}
 
+
+%option noyywrap
+
 %%
 
-"return" { return RET_STMT; }
-"true"   { return TRUE_TOKEN; }
-"false"  { return FALSE_TOKEN; }
+"return" { return token::RET_STMT; }
+"true"   { return token::TRUE_TOKEN; }
+"false"  { return token::FALSE_TOKEN; }
 
-"==" { return EQ; }
-"!=" { return NE; }
-"<=" { return LE; }
-">=" { return GE; }
-"<"  { return LT; }
-">"  { return GT; }
+"==" { return token::EQ; }
+"!=" { return token::NE; }
+"<=" { return token::LE; }
+">=" { return token::GE; }
+"<"  { return token::LT; }
+">"  { return token::GT; }
 
-"->" { return ARROW_TOKEN; }
+"->" { return token::ARROW_TOKEN; }
 
 "+" { return '+'; }
 "-" { return '-'; }
@@ -46,18 +55,20 @@
     const size_t len = strlen(str);
     str[len - 1] = '\0';
     memmove(str, str + 1, len - 1);
-    yylval.strval = strdup(str);
-    return CONST_STR;
+    
+    yylval->strval = strdup(str);
+    return token::CONST_STR;
 }
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
-    yylval.strval = strdup(yytext);
-    return ID_TOKEN;
+    yylval->strval = strdup(yytext); /* Strzałka */
+    return token::ID_TOKEN;
 }
 
 [0-9]+  { 
-    yylval.intval = static_cast<int>(std::stoull(yytext));  
-    return NUMBER_TOKEN; 
+    /* Strzałka + rzutowanie */
+    yylval->intval = static_cast<int>(std::stoull(yytext));  
+    return token::NUMBER_TOKEN; 
 }
 
 [ \t\n]+ { }
@@ -66,6 +77,3 @@
 
 %%
 
-int yywrap() {
-    return 1;
-}

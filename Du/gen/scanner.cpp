@@ -262,6 +262,9 @@ static void yy_flex_free YY_PROTO(( void * ));
 
 #define YY_AT_BOL() (yy_current_buffer->yy_at_bol)
 
+
+#define yywrap() 1
+#define YY_SKIP_YYWRAP
 typedef unsigned char YY_CHAR;
 FILE *yyin = (FILE *) 0, *yyout = (FILE *) 0;
 typedef int yy_state_type;
@@ -399,18 +402,24 @@ char *yytext;
 #line 1 "lexer/scanner.l"
 #define INITIAL 0
 #line 2 "lexer/scanner.l"
-#include "parser.hpp"
+#include "parser.hpp" 
 #include <string>
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+
+
+typedef yy::parser::token token;
+
+
+#define YY_DECL int yylex(yy::parser::semantic_type *yylval)
 
 #ifdef _WIN32
 #include <io.h>
 #else
 #include <unistd.h>
 #endif
-#line 414 "E:/LocalRepo/Compilers/DulekLang/Du/gen/scanner.cpp"
+#line 423 "E:/LocalRepo/Compilers/DulekLang/Du/gen/scanner.cpp"
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -561,10 +570,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
 
-#line 15 "lexer/scanner.l"
+#line 24 "lexer/scanner.l"
 
 
-#line 568 "E:/LocalRepo/Compilers/DulekLang/Du/gen/scanner.cpp"
+#line 577 "E:/LocalRepo/Compilers/DulekLang/Du/gen/scanner.cpp"
 
 	if ( yy_init )
 		{
@@ -649,163 +658,165 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 17 "lexer/scanner.l"
-{ return RET_STMT; }
+#line 26 "lexer/scanner.l"
+{ return token::RET_STMT; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 18 "lexer/scanner.l"
-{ return TRUE_TOKEN; }
+#line 27 "lexer/scanner.l"
+{ return token::TRUE_TOKEN; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 19 "lexer/scanner.l"
-{ return FALSE_TOKEN; }
+#line 28 "lexer/scanner.l"
+{ return token::FALSE_TOKEN; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 21 "lexer/scanner.l"
-{ return EQ; }
+#line 30 "lexer/scanner.l"
+{ return token::EQ; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 22 "lexer/scanner.l"
-{ return NE; }
+#line 31 "lexer/scanner.l"
+{ return token::NE; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 23 "lexer/scanner.l"
-{ return LE; }
+#line 32 "lexer/scanner.l"
+{ return token::LE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 24 "lexer/scanner.l"
-{ return GE; }
+#line 33 "lexer/scanner.l"
+{ return token::GE; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 25 "lexer/scanner.l"
-{ return LT; }
+#line 34 "lexer/scanner.l"
+{ return token::LT; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 26 "lexer/scanner.l"
-{ return GT; }
+#line 35 "lexer/scanner.l"
+{ return token::GT; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 28 "lexer/scanner.l"
-{ return ARROW_TOKEN; }
+#line 37 "lexer/scanner.l"
+{ return token::ARROW_TOKEN; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 30 "lexer/scanner.l"
+#line 39 "lexer/scanner.l"
 { return '+'; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 31 "lexer/scanner.l"
+#line 40 "lexer/scanner.l"
 { return '-'; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 32 "lexer/scanner.l"
+#line 41 "lexer/scanner.l"
 { return '*'; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 33 "lexer/scanner.l"
+#line 42 "lexer/scanner.l"
 { return '/'; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 34 "lexer/scanner.l"
+#line 43 "lexer/scanner.l"
 { return '('; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 35 "lexer/scanner.l"
+#line 44 "lexer/scanner.l"
 { return ')'; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 36 "lexer/scanner.l"
+#line 45 "lexer/scanner.l"
 { return ';'; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 37 "lexer/scanner.l"
+#line 46 "lexer/scanner.l"
 { return ','; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 38 "lexer/scanner.l"
+#line 47 "lexer/scanner.l"
 { return '{'; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 39 "lexer/scanner.l"
+#line 48 "lexer/scanner.l"
 { return '}'; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 40 "lexer/scanner.l"
+#line 49 "lexer/scanner.l"
 { return '['; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 41 "lexer/scanner.l"
+#line 50 "lexer/scanner.l"
 { return ']'; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 42 "lexer/scanner.l"
+#line 51 "lexer/scanner.l"
 { return '='; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 44 "lexer/scanner.l"
+#line 53 "lexer/scanner.l"
 {
     char* str = yytext;
     const size_t len = strlen(str);
     str[len - 1] = '\0';
     memmove(str, str + 1, len - 1);
-    yylval.strval = strdup(str);
-    return CONST_STR;
+    
+    yylval->strval = strdup(str);
+    return token::CONST_STR;
 }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 53 "lexer/scanner.l"
+#line 63 "lexer/scanner.l"
 { 
-    yylval.strval = strdup(yytext);
-    return ID_TOKEN;
+    yylval->strval = strdup(yytext); /* Strzałka */
+    return token::ID_TOKEN;
 }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 58 "lexer/scanner.l"
+#line 68 "lexer/scanner.l"
 { 
-    yylval.intval = static_cast<int>(std::stoull(yytext));  
-    return NUMBER_TOKEN; 
+    /* Strzałka + rzutowanie */
+    yylval->intval = static_cast<int>(std::stoull(yytext));  
+    return token::NUMBER_TOKEN; 
 }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 63 "lexer/scanner.l"
+#line 74 "lexer/scanner.l"
 { }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 65 "lexer/scanner.l"
+#line 76 "lexer/scanner.l"
 { }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 67 "lexer/scanner.l"
+#line 78 "lexer/scanner.l"
 ECHO;
 	YY_BREAK
-#line 809 "E:/LocalRepo/Compilers/DulekLang/Du/gen/scanner.cpp"
+#line 820 "E:/LocalRepo/Compilers/DulekLang/Du/gen/scanner.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1691,9 +1702,6 @@ int main()
 	return 0;
 	}
 #endif
-#line 67 "lexer/scanner.l"
+#line 78 "lexer/scanner.l"
 
 
-int yywrap() {
-    return 1;
-}

@@ -26,6 +26,10 @@ AstScope* getActualScope()
 using AstPtr = std::unique_ptr<AstElement>;
 %}
 
+%skeleton "lalr1.cc"  
+%language "C++"       
+%defines        
+
 %code requires {
     #include "../ast/AstBuildSystem.hpp"
     #include "../ast/AstElement.hpp"
@@ -35,7 +39,13 @@ using AstPtr = std::unique_ptr<AstElement>;
     #include "../ast/VariableDecorator.hpp"
 }
 
-/* Definicja Unii */
+%code {
+
+    int yylex(yy::parser::semantic_type *yylval);
+    #include <iostream>
+    #include <format>
+}
+
 %union {
     int intval;
     AstElement* astval;
@@ -301,6 +311,15 @@ decl_fun:
 
 %%
 
-void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s, at: %s\n", s, yytext);
+void yy::parser::error(const location_type& l, const std::string& m)
+{
+    // Standard format: file:line:col: error message
+    // If you don't use filenames yet, you can remove the filename part
+    std::string filename = (l.begin.filename) ? *l.begin.filename : "unknown";
+
+    std::cerr << std::format("{}:{}:{}: {}\n", 
+                             filename, 
+                             l.begin.line, 
+                             l.begin.column, 
+                             m);
 }
