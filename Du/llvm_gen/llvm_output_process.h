@@ -11,6 +11,7 @@
 #include <llvm/Pass.h>
 #include <llvm/Target/CGPassBuilderOption.h>
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/TargetParser/Host.h>
 class llvmOutputProcess
 {
 protected:
@@ -69,46 +70,65 @@ public:
 		llvm::InitializeAllAsmParsers();
 		llvm::InitializeAllAsmPrinters();
 	}
-	void process() override
-	{
-		llvm::StringRef targetStr = llvm::Triple::getArchTypeName(llvm::Triple::ArchType::x86_64);
-		m_target = llvm::TargetRegistry::lookupTarget(targetStr, m_errs);
-		if (!m_target)
-		{
-			llvm::errs() << "Error: " << m_errs;
-			return;
-		}
-		llvm::TargetOptions opt;
-		llvm::TargetMachine* tm = m_target->createTargetMachine(targetStr, "generic", "", opt, llvm::Reloc::PIC_);
-		m_module->setDataLayout(tm->createDataLayout());
-		m_module->setTargetTriple(targetStr);
+    void process() override
+    {
 
+        std::string targetTriple = llvm::sys::getDefaultTargetTriple();
 
-		std::string filename = "output.o";
-		std::error_code ec;
-		llvm::raw_fd_ostream dest(filename, ec);
+        m_module->setTargetTriple(targetTriple);
 
-		if (ec) {
-			llvm::errs() << "Could not open file: " << ec.message() << "\n";
-			return;
-		}
+        std::string error;
+        const llvm::Target* target = llvm::TargetRegistry::lookupTarget(targetTriple, error);
 
-		// Tworzenie pass managera
-		llvm::legacy::PassManager pm;
+        if (!target)
+        {
+            llvm::errs() << "Error: " << error;
+            return;
+        }
 
-		// Emitowanie pliku obiektowego
+		std::string cpu = llvm::sys::getHostCPUName().data();
+        std::string features = "";
 
-		if (tm->addPassesToEmitFile(pm, dest, nullptr, llvm::CodeGenFileType::AssemblyFile)) {
-			llvm::errs() << "TargetMachine can't emit a file of this type!\n";
-			return;
+        llvm::TargetOptions opt;
 
-		}
-		if (m_module)
-		{
-			pm.run(*m_module);
-			llvm::outs() << "Wygenerowano plik obiektowy: " << filename << "\n";
-		}
-	}
+		auto rm = std::optional<llvm::Reloc::Model>();
+
+        // 3. Tworzenie TargetMachine
+        llvm::TargetMachine* tm = target->createTargetMachine(
+            targetTriple,
+            cpu,
+            features,
+            opt,
+            llvm::Reloc::PIC_
+        );
+
+        m_module->setDataLayout(tm->createDataLayout());
+
+        std::string filename = "output.s";
+
+        std::error_code ec;
+        llvm::raw_fd_ostream dest(filename, ec);
+
+        if (ec) {
+            llvm::errs() << "Could not open file: " << ec.message() << "\n";
+            return;
+        }
+
+        llvm::legacy::PassManager pm;
+
+        auto fileType = llvm::CodeGenFileType::AssemblyFile;
+
+        if (tm->addPassesToEmitFile(pm, dest, nullptr, fileType)) {
+            llvm::errs() << "TargetMachine can't emit a file of this type!\n";
+            return;
+        }
+
+        pm.run(*m_module);
+        llvm::outs() << "Wygenerowano plik: " << filename << "\n";
+
+      
+        delete tm;
+    }
 
 	void showUpArchitecture()
 	{

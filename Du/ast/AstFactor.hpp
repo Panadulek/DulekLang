@@ -78,7 +78,10 @@ class AstFactory
 		{
 			return new AstExpr(exprToCast, AstExpr::Operation::Cast, op);
 		}
-
+		AstExpr* createCmpExpr(AstElement* left, AstExpr::CMP_OPERATION op, AstElement* right)
+		{
+			return new AstExpr(left, AstExpr::Operation::CMP, right, op);
+		}
 		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
 		{
 			AstElement* element = beginContainer->getElement(funName);

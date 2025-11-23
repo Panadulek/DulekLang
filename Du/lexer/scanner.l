@@ -1,6 +1,10 @@
 %{
 #include "parser.hpp"
 #include <string>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -8,20 +12,34 @@
 #endif
 %}
 
-
 %%
 
-"return" {
-return RET_STMT;
-}
+"return" { return RET_STMT; }
+"true"   { return TRUE_TOKEN; }
+"false"  { return FALSE_TOKEN; }
 
-"true" {
-return TRUE_TOKEN;
-}
+"==" { return EQ; }
+"!=" { return NE; }
+"<=" { return LE; }
+">=" { return GE; }
+"<"  { return LT; }
+">"  { return GT; }
 
-"false" {
-return FALSE_TOKEN;
-}
+"->" { return ARROW_TOKEN; }
+
+"+" { return '+'; }
+"-" { return '-'; }
+"*" { return '*'; }
+"/" { return '/'; }
+"(" { return '('; }
+")" { return ')'; }
+";" { return ';'; }
+"," { return ','; }
+"{" { return '{'; }
+"}" { return '}'; }
+"[" { return '['; }
+"]" { return ']'; }
+"=" { return '='; }
 
 \"([^\"\\]|\\.)*\" {
     char* str = yytext;
@@ -32,36 +50,22 @@ return FALSE_TOKEN;
     return CONST_STR;
 }
 
-[a-zA-Z_][a-zA-Z0-9_]*  { 
-yylval.strval = strdup(yytext);
-return ID_TOKEN;
+[a-zA-Z_][a-zA-Z0-9_]* { 
+    yylval.strval = strdup(yytext);
+    return ID_TOKEN;
 }
-[0-9]+  { yylval.intval =  std::stoull(yytext);  return NUMBER_TOKEN; }
 
-"+" { return '+'; }
-"-" { return '-'; }
-"*" { return '*'; }
-"/" { return '/'; }
-"(" { return '('; }
-")" { return ')'; }
-";" {return ';';}
-"->" {return ARROW_TOKEN;}
-"," {return ',';}
-"{" {return '{';}
-"}" {return '}';}
-"[" {return '[';}
-"]" {return ']';}
-"=" {return '=';}
+[0-9]+  { 
+    yylval.intval = static_cast<int>(std::stoull(yytext));  
+    return NUMBER_TOKEN; 
+}
 
-[ \t\n]+ { /* Ignoruj bia�e znaki */ }
-.       {  }
+[ \t\n]+ { }
 
-
+.       { }
 
 %%
 
 int yywrap() {
     return 1;
 }
-
-

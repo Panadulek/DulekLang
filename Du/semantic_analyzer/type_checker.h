@@ -91,12 +91,12 @@ private:
 	// Core Logic
 	// -------------------------------------------------------------------------
 
-	// Sprawdza i ewentualnie wstawia wêz³y rzutowania (Implicit Cast)
+	// Sprawdza i ewentualnie wstawia wï¿½zï¿½y rzutowania (Implicit Cast)
 	bool tryPromote(AstExpr* parentExpr, bool isLeftChild, BasicTypes targetType, BasicTypes sourceType)
 	{
 		if (targetType == sourceType) return true;
 
-		// SprawdŸ w grafie, czy istnieje konwersja Source -> Target
+		// Sprawdï¿½ w grafie, czy istnieje konwersja Source -> Target
 		CastOp op = CastGraph::getCastOp(sourceType, targetType);
 
 		if (op != CastOp::NoOp)
@@ -130,7 +130,7 @@ private:
 
 	void checkBinaryOp(AstExpr* expr)
 	{
-		// 1. Najpierw sprawdŸ dzieci (Bottom-Up traversal)
+		// 1. Najpierw sprawdï¿½ dzieci (Bottom-Up traversal)
 		checkExpr(reinterpret_cast<AstExpr*>(expr->left()));
 		checkExpr(reinterpret_cast<AstExpr*>(expr->right()));
 
@@ -139,7 +139,7 @@ private:
 		auto rTypeOpt = resolveType(expr->right());
 
 		if (!lTypeOpt || !rTypeOpt) {
-			// B³¹d: nie uda³o siê ustaliæ typów operandów
+			// Bï¿½ï¿½d: nie udaï¿½o siï¿½ ustaliï¿½ typï¿½w operandï¿½w
 			std::cerr << "Type Error: Cannot resolve types for binary operation.\n";
 			return;
 		}
@@ -169,6 +169,48 @@ private:
 			<< (int)lType << " vs " << (int)rType << ")\n";
 	}
 
+	void checkCmpOp(AstExpr* expr)
+	{
+		// 1. Najpierw sprawd dzieci (Bottom-Up traversal)
+		checkExpr(reinterpret_cast<AstExpr*>(expr->left()));
+		checkExpr(reinterpret_cast<AstExpr*>(expr->right()));
+
+		// 2. Pobierz typy dzieci po sprawdzeniu
+		auto lTypeOpt = resolveType(expr->left());
+		auto rTypeOpt = resolveType(expr->right());
+
+		if (!lTypeOpt || !rTypeOpt) {
+			// Bd: nie udao si ustali typw operandw
+			std::cerr << "Type Error: Cannot resolve types for comparison operation.\n";
+			return;
+		}
+
+		BasicTypes lType = *lTypeOpt;
+		BasicTypes rType = *rTypeOpt;
+
+		if (lType == rType)
+		{
+			// Typy s zgodne, nic nie trzeba robi.
+			return;
+		}
+
+		// Sprbuj wypromowa lewy do typu prawego
+		if (tryPromote(expr, true, rType, lType))
+		{
+			return;
+		}
+
+		// Sprbuj wypromowa prawy do typu lewego
+		if (tryPromote(expr, false, lType, rType))
+		{
+			return;
+		}
+
+		// Jeli promocja niemoliwa, to bd typw.
+		std::cerr << "Type Error: Incompatible types in comparison expression ("
+			<< (int)lType << " vs " << (int)rType << ")\n";
+	}
+
 	void checkExpr(AstExpr* expr)
 	{
 		if (!expr) return;
@@ -176,6 +218,10 @@ private:
 		if (expr->isBinaryOp())
 		{
 			checkBinaryOp(expr);
+		}
+		else if (expr->isCmpOp())
+		{
+			checkCmpOp(expr);
 		}
 		else if (expr->op() == AstExpr::Operation::Reference)
 		{

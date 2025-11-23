@@ -32,7 +32,11 @@ class LlvmScopeGenerator
 					}
 				}
 			}
-			auto function = llvm::Function::Create(llvm::FunctionType::get(type, types, false), llvm::GlobalValue::PrivateLinkage, scope->getName(), *m);
+			llvm::GlobalValue::LinkageTypes linkage = llvm::GlobalValue::PrivateLinkage;
+			if (scope->getName() == "main") {
+				linkage = llvm::GlobalValue::ExternalLinkage;
+			}
+			auto function = llvm::Function::Create(llvm::FunctionType::get(type, types, false), linkage, scope->getName(), *m);
 			getLlvmCache<>().insertElement(function, scope);
 			auto bb = llvm::BasicBlock::Create(getContext(), "entry", function);
 			b.SetInsertPoint(bb);

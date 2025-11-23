@@ -21,7 +21,17 @@ public:
 			Reference,
 			Call_fun,
 			Arr_Indexing,
-			Cast
+			Cast,
+			CMP,
+		};
+		enum class CMP_OPERATION : uint8_t
+		{
+			EQUAL,
+			GREATER_THAN,
+			LESS_THAN,
+			GREATER_OR_EQ,
+			LESS_OR_EQ,
+			NOT_EQUAL,
 		};
 		using IndexingArray = ArrayDecorator::Array;
 private:
@@ -45,6 +55,7 @@ private:
 	AstElement* m_right;
 	Operation m_op;
 	std::optional<CastOp> m_castOp;
+	std::optional<CMP_OPERATION> m_cmpOp;
 	std::unique_ptr<AstType> m_type;
 	std::unique_ptr<IndexingArray> createArrayFromIndexingOp();
 public:
@@ -55,7 +66,8 @@ public:
 	{}
 	explicit AstExpr(AstElement* left, Operation op, CastOp castOp) : m_left(left), m_op(op), m_right(nullptr), m_type(nullptr), m_castOp(castOp), AstElement("expr", AstElement::ElementType::EXPR)
 	{}
-
+	explicit AstExpr(AstElement* left, Operation op, AstElement* right, CMP_OPERATION cop) : m_left(left), m_op(op), m_right(right), m_type(new AstType(BasicTypes::BOOL)), m_cmpOp(cop), AstElement("expr", AstElement::ElementType::EXPR) 
+	{}
 	Operation op() const { return m_op; }
 	
 	AstElement* left() const { return m_left; }
@@ -80,7 +92,14 @@ public:
 			return false;
 		}
 	}
-
+	const bool isCmpOp()
+	{
+		return m_cmpOp.has_value() && m_op == Operation::CMP;
+	}
+	std::optional <CMP_OPERATION> getCmpOp()
+	{
+		return m_cmpOp;
+	}
 	const bool isCastExpr() const
 	{
 		return m_op == Operation::Cast && m_castOp.has_value();

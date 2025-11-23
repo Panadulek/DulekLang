@@ -71,4 +71,41 @@ public:
 			return false;
 		}
 	}
+	bool isSigned() const
+	{
+		switch (m_simpleType)
+		{
+		case BasicTypes::I8:
+		case BasicTypes::I16:
+		case BasicTypes::I32:
+		case BasicTypes::I64:
+			return true;
+		default:
+			return false;
+		}
+	}
+	bool isUnsigned() const
+	{
+		switch (m_simpleType)
+		{
+		case BasicTypes::U8:
+		case BasicTypes::U16:
+		case BasicTypes::U32:
+		case BasicTypes::U64:
+			return true;
+		default:
+			return false;
+		}
+	}
+	bool isFloatingPoint() const
+	{
+		switch (m_simpleType)
+		{
+		case BasicTypes::F32:
+		case BasicTypes::F64:
+			return true;
+		default:
+			return false;
+		}
+	}
 };

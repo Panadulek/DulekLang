@@ -3,17 +3,21 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-extern int __cdecl yylex();
-void yyerror(const char* s);
-extern char* yytext;
-extern "C" int yywrap();
+#include <memory>
+#include <iostream>
+
 #include "../ast/AstElement.hpp"
 #include "../ast/AstBuildSystem.hpp"
 #include "../ast/BasicType.hpp"
 #include "../ast/AstList.hpp"
 #include "../Terminal/Terminal.hpp"
 #include "../ast/VariableDecorator.hpp"
-#include<iostream>
+
+extern int __cdecl yylex();
+void yyerror(const char* s);
+extern char* yytext;
+extern "C" int yywrap();
+
 AstScope* getActualScope()
 {
    return AstBuildSystem::Instance().getBuilder().getActualScope();
@@ -21,7 +25,6 @@ AstScope* getActualScope()
 
 using AstPtr = std::unique_ptr<AstElement>;
 %}
-
 
 %code requires {
     #include "../ast/AstBuildSystem.hpp"
@@ -32,6 +35,7 @@ using AstPtr = std::unique_ptr<AstElement>;
     #include "../ast/VariableDecorator.hpp"
 }
 
+/* Definicja Unii */
 %union {
     int intval;
     AstElement* astval;
@@ -39,37 +43,49 @@ using AstPtr = std::unique_ptr<AstElement>;
     char* strval;
     ScopeDecorator::Function::CONTAINER* scopeInputList;
     ArrayDecorator::Array* arrayDecorator;
+    AstExpr::CMP_OPERATION cmp_op; /* Enum dla operatorów */
 }
 
+/* Tokeny */
 %token ARROW_TOKEN RET_STMT
 %token<strval> ID_TOKEN CONST_STR
 %token<intval> NUMBER_TOKEN
-%token TRUE_TOKEN FALSE_TOKEN
-%debug
+%token TRUE_TOKEN FALSE_TOKEN 
+%debug 
+%token EQ NE LT GT LE GE
+
+%nonassoc EQ NE LT GT LE GE
+
 %left '+' '-'
+
 %left '*' '/'
 
-%type <astval> expr expr_index_op decl_expr decl_fun decl_fun_header stmt 
+%right UMINUS
+
+/* Typy dla reguł */
+%type <astval> expr expr_index_op decl_expr decl_fun decl_fun_header stmt
 %type <astlist> expr_list 
-%type <scopeInputList>decl_expr_list
+%type <scopeInputList> decl_expr_list
 %type <arrayDecorator> dimension_list
+%type <cmp_op> cmp_op /* Pomocnicza reguła zwracająca typ enuma */
+
 %start program
 
 %%
 
 program:
-    |
-    program stmt{}
+    | program stmt {}
 ;
 
-
 stmt:
-    ID_TOKEN '=' expr ';'
+      ID_TOKEN '=' expr ';'
     {
         AstScope* scope = getActualScope();
-        AstElement* lhs = scope->getElement($1);
+        /* Uwaga: getElement może być potrzebny do sprawdzenia, czy zmienna istnieje */
+        AstElement* lhs = scope->getElement($1); 
         AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable($1, $3, getActualScope());
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
+        free($1); /* Pamiętaj o zwalnianiu ID */
     }
     | expr_index_op '=' expr ';'
     {
@@ -80,6 +96,7 @@ stmt:
     {
         AstPtr ptr($1);
         AstBuildSystem::Instance().getBuilder().addElement(std::move(ptr));
+        /* Tutaj tworzysz Statement z deklaracji? Upewnij się, że nie dublujesz elementów w Builderze */
         AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createDeclStmt($1);
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
     }
@@ -101,17 +118,16 @@ stmt:
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
     }
     | decl_fun
-     
 ;
 
 stmt_list:
-    |stmt
+      stmt
     | stmt_list stmt
 ;
 
-
+/* --- GŁÓWNA REGUŁA WYRAŻEŃ --- */
 expr:
-    expr '+' expr 
+      expr '+' expr 
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createAddExpr($1, $3);
     }
@@ -127,9 +143,15 @@ expr:
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createDivExpr($1, $3);
     }
-    | '-' expr %prec '*'
+    | expr cmp_op expr %prec EQ
     {
-        
+
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCmpExpr($1, $2, $3);
+    }
+    | '-' expr %prec UMINUS
+    {
+
+       
     }
     | '(' expr ')' 
     {
@@ -159,38 +181,50 @@ expr:
     }
     | ID_TOKEN '(' expr_list ')'
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1,  getActualScope(), $3);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1, getActualScope(), $3);
         free($1);
-    }
-    | expr_index_op // array operator
-    {
-        $$ = $1;
     }
     | ID_TOKEN '(' ')'
     {
-        
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1,  getActualScope(), nullptr);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1, getActualScope(), nullptr);
         free($1);
     }
+    | expr_index_op // Tablice
+    {
+        $$ = $1;
+    }
 ;
+
+cmp_op:
+      EQ { $$ = AstExpr::CMP_OPERATION::EQUAL; }
+    | NE { $$ = AstExpr::CMP_OPERATION::NOT_EQUAL; }
+    | LT { $$ = AstExpr::CMP_OPERATION::LESS_THAN; }
+    | GT { $$ = AstExpr::CMP_OPERATION::GREATER_THAN; }
+    | LE { $$ = AstExpr::CMP_OPERATION::LESS_OR_EQ; }
+    | GE { $$ = AstExpr::CMP_OPERATION::GREATER_OR_EQ; }
+;
+
 expr_index_op:
-    ID_TOKEN dimension_list // array operator
+    ID_TOKEN dimension_list
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp($1, *$2);
         free($1);
+        /* dimension_list (arrayDecorator) powinien być zarządzany przez createArrayIndexingOp, albo usunięty ręcznie */
+        delete $2; 
     }
 ;
+
 expr_list:
-    |
-    expr {
+      expr {
         $$ = new AstArgs();
         $$->push($1);
     }
     | expr_list ',' expr
     {
+        $$ = $1; /* $1 to wskaźnik na listę, po prostu dodajemy do niej */
         $$->push($3);
     }
-    ;
+;
 
 dimension_list:
     '[' expr ']' 
@@ -203,22 +237,23 @@ dimension_list:
         $$ = $1;
         $$->emplace_back(std::make_unique<ArrayDecorator::Dimension>(ast_element_cast<AstExpr>($3)));
     }
-    ;
+;
+
 decl_expr:
     ID_TOKEN ID_TOKEN
     {
-        $$ = AstBuildSystem::Instance().getFactory(). varFactor().createVariable($1, $2, getActualScope()).release();
-        free($1);
-        free($2);
+        $$ = AstBuildSystem::Instance().getFactory().varFactor().createVariable($1, $2, getActualScope()).release();
+        free($1); // Typ zmiennej
+        free($2); // Nazwa zmiennej
     }
     | ID_TOKEN ID_TOKEN dimension_list
     {
         $$ = AstBuildSystem::Instance().getFactory().varFactor().createArray($1, $2, $3, getActualScope()).release();
         free($1);
         free($2);
+        // dimension_list ($3) został zużyty przez createArray (zakładam, że przejmuje on ownership)
     }
 ;
-
 
 decl_expr_list:
     decl_expr
@@ -228,18 +263,20 @@ decl_expr_list:
     }
     | decl_expr_list ',' decl_expr
     {
+        $$ = $1;
         $$->emplace_back($3);
     }
-    ;
+;
 
 decl_fun_header: 
-    ID_TOKEN '('  ')' ARROW_TOKEN ID_TOKEN 
+    ID_TOKEN '(' ')' ARROW_TOKEN ID_TOKEN 
     {
         auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $5, nullptr);
         auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
         AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
-        $$ = funRawPtr;  // U�ywasz tutaj AstElement*
-        free($1);
+        $$ = funRawPtr; 
+        free($1); // Nazwa funkcji
+        free($5); // Typ zwracany (to też jest ID_TOKEN<strval>!)
     } 
     |
     ID_TOKEN '(' decl_expr_list ')' ARROW_TOKEN ID_TOKEN 
@@ -247,8 +284,10 @@ decl_fun_header:
         auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $6, $3);
         auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
         AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
-        $$ = funRawPtr;  // U�ywasz tutaj AstElement*
-        free($1);
+        $$ = funRawPtr;
+        free($1); // Nazwa funkcji
+        free($6); // Typ zwracany
+        delete $3; // scopeInputList (pointer container) - jeśli createFunction robi kopię, to trzeba usunąć. Jeśli przejmuje ownership - nie usuwaj.
     } 
 ;
     
@@ -260,13 +299,8 @@ decl_fun:
     }
 ;
 
-
-
-
 %%
 
-
-
 void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s, %s\n", s, yytext);
+    fprintf(stderr, "Error: %s, at: %s\n", s, yytext);
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Instructions.h>
+#include <cassert>
 #include "../ast/AstStatement.hpp"
 #include "../ast/AstVariableDecl.hpp"
 #include "../ast/BasicType.hpp"
@@ -40,6 +41,20 @@ class llvmStmtGenerator
 		auto bb = b.GetInsertBlock();
 		return _getAllocInst(variableName, bb->begin(), bb->end());
 	}
+	static llvm::Value* readLValueFromMemory(AstElement* element, llvm::Value* value, llvm::IRBuilder<>& b)
+	{
+		if (element && element->isLValue())
+		{
+			assert(value && value->getType()->isPointerTy() && "Compiler bug: An l-value must be a pointer here.");
+
+			llvm::Type* loadType = getLlvmCache<>().getType(value);
+			assert(loadType && "Compiler bug: Type for l-value not found in cache.");
+
+			return b.CreateLoad(loadType, value);
+		}
+		return value;
+	}
+
 	static llvm::Value* generateArrayIndexing(AstExpr* expr, llvm::IRBuilder<>& b)
 	{
 		if (!expr)
@@ -89,7 +104,7 @@ class llvmStmtGenerator
 			if (!value)
 				return nullptr;
 			AstType* type = expr->getType();
-			auto srcValue =  value->getType()->isPointerTy() ? b.CreateLoad(getLlvmCache<>().getType(value), value) : value;
+			auto srcValue = readLValueFromMemory(left, value, b);
 			if (type)
 			{
 				llvm::Type* destType = LlvmTypeGenerator::convertAstToLlvmType(type->getType());
@@ -181,22 +196,16 @@ class llvmStmtGenerator
 		return nullptr;
 	}
 
-	static llvm::Value* generateBinaryOpInstruction(llvm::Value* l, llvm::Value* r, llvm::IRBuilder<>& b, AstExpr::Operation op, std::string_view description)
+	static llvm::Value* generateBinaryOpInstruction(AstElement* leftElem, llvm::Value* l, AstElement* rightElem, llvm::Value* r, llvm::IRBuilder<>& b, AstExpr::Operation op, std::string_view description)
 	{
-		if (l && l->getType()->isPointerTy())
-		{
-			l = b.CreateLoad(getLlvmCache<>().getType(l), l);
-		}
-		if (r && r->getType()->isPointerTy())
-		{
-			r = b.CreateLoad(getLlvmCache<>().getType(r), r);
-		}
+		l = readLValueFromMemory(leftElem, l, b);
+		r = readLValueFromMemory(rightElem, r, b);
 		switch (op)
 		{
 			case AstExpr::Operation::Addition:
 				return b.CreateAdd(l, r, description);
 			case AstExpr::Operation::Subtraction:
-				return b.CreateSub(l,r, description);
+				return b.CreateSub(l, r, description);
 			case AstExpr::Operation::Multiplication:
 				return b.CreateMul(l, r, description);
 			case AstExpr::Operation::Division:
@@ -205,7 +214,44 @@ class llvmStmtGenerator
 				return b.CreateNeg(l, description);
 		}
 	}
+	static llvm::Value* generateCmpOpInstruction(AstExpr* expr, llvm::Value* l, llvm::Value* r, llvm::IRBuilder<>& b, std::string_view description)
+	{
+		assert(expr->op() == AstExpr::Operation::CMP && expr->getCmpOp().has_value());
 
+		l = readLValueFromMemory(expr->left(), l, b);
+		r = readLValueFromMemory(expr->right(), r, b);
+
+		AstType* operandType = nullptr;
+		if (auto leftExpr = ast_element_cast<AstExpr>(expr->left())) {
+			operandType = leftExpr->getType();
+		}
+		assert(operandType && "Could not determine operand type for comparison");
+
+		auto cop = expr->getCmpOp().value();
+
+		if (operandType->isFloatingPoint()) {
+			switch (cop) {
+			case AstExpr::CMP_OPERATION::EQUAL:         return b.CreateFCmpOEQ(l, r, description);
+			case AstExpr::CMP_OPERATION::NOT_EQUAL:       return b.CreateFCmpONE(l, r, description);
+			case AstExpr::CMP_OPERATION::GREATER_THAN:    return b.CreateFCmpOGT(l, r, description);
+			case AstExpr::CMP_OPERATION::GREATER_OR_EQ:   return b.CreateFCmpOGE(l, r, description);
+			case AstExpr::CMP_OPERATION::LESS_THAN:       return b.CreateFCmpOLT(l, r, description);
+			case AstExpr::CMP_OPERATION::LESS_OR_EQ:      return b.CreateFCmpOLE(l, r, description);
+			}
+		}
+		else { // Integer or Boolean
+			bool isUnsigned = operandType->isUnsigned() || operandType->getType() == BasicTypes::BOOL;
+			switch (cop) {
+			case AstExpr::CMP_OPERATION::EQUAL:         return b.CreateICmpEQ(l, r, description);
+			case AstExpr::CMP_OPERATION::NOT_EQUAL:       return b.CreateICmpNE(l, r, description);
+			case AstExpr::CMP_OPERATION::GREATER_THAN:    return isUnsigned ? b.CreateICmpUGT(l, r, description) : b.CreateICmpSGT(l, r, description);
+			case AstExpr::CMP_OPERATION::GREATER_OR_EQ:   return isUnsigned ? b.CreateICmpUGE(l, r, description) : b.CreateICmpSGE(l, r, description);
+			case AstExpr::CMP_OPERATION::LESS_THAN:       return isUnsigned ? b.CreateICmpULT(l, r, description) : b.CreateICmpSLT(l, r, description);
+			case AstExpr::CMP_OPERATION::LESS_OR_EQ:      return isUnsigned ? b.CreateICmpULE(l, r, description) : b.CreateICmpSLE(l, r, description);
+			}
+		}
+		return nullptr;
+	}
 	static llvm::Value* generateExprInstruction(AstExpr* expr, llvm::IRBuilder<>& b)
 	{
 		if (expr->op() == AstExpr::Operation::Arr_Indexing)
@@ -242,7 +288,11 @@ class llvmStmtGenerator
 		
 			if (expr->isBinaryOp())
 			{
-				return generateBinaryOpInstruction(l, r, b, expr->op(), description);
+				return generateBinaryOpInstruction(expr->left(), l, expr->right(), r, b, expr->op(), description);
+			}
+			else if (expr->isCmpOp())
+			{
+				return generateCmpOpInstruction(expr, l, r, b, description);
 			}
 			switch (expr->op())
 			{		
@@ -262,10 +312,8 @@ class llvmStmtGenerator
 		if (assgn && assgn->lhs() && assgn->rhs())
 		{
 			llvm::Value* exprInstruction = generateExprInstruction(assgn->rhs(), b);
-			if (assgn->rhs()->isLValue())
-			{
-				exprInstruction = b.CreateLoad(getLlvmCache<>().getType(exprInstruction), exprInstruction);
-			}
+			exprInstruction = readLValueFromMemory(assgn->rhs(), exprInstruction, b);
+			
 			auto bb = b.GetInsertBlock();
 			AstElement* lhs = assgn->lhs();
 			llvm::Value* variable = nullptr;
