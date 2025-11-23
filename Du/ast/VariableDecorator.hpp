@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 class AstExpr;
-namespace q
+namespace ArrayDecorator
 {
 	class Dimension
 	{

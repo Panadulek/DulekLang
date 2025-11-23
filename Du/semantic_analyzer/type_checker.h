@@ -10,6 +10,10 @@
 #include "../ast/AstType.hpp"
 #include "../ast/CastGraph.hpp" // Zak³adamy, ¿e to jest ten nowy, poprawiony plik
 #include "../ast/AstBuildSystem.hpp"
+#include "../ast/VariableDecorator.hpp" // Added
+#include "../ast/AstReference.h"      // Added
+#include "../ast/AstVariableDecl.hpp" // Added
+
 class TypeChecker
 {
 private:
@@ -52,6 +56,37 @@ private:
 		{
 			if (auto t = expr->getType()) {
 				return t->getType();
+			}
+			else if (expr->op() == AstExpr::Operation::Arr_Indexing)
+			{
+				AstElement* base_ref_element = expr->left();
+				AstVariableDecl* varDecl = nullptr;
+
+				if (auto ref_expr = ast_element_cast<AstExpr>(base_ref_element)) {
+					if (ref_expr->op() == AstExpr::Operation::Reference) {
+						if (auto ref = ast_element_cast<AstRef>(ref_expr->right())) {
+							varDecl = ast_element_cast<AstVariableDecl>(ref->ref());
+						}
+					}
+				}
+				
+				if (!varDecl) return std::nullopt;
+
+				AstType* varType = varDecl->getVarType();
+				if (!varType || !varType->isArray()) return std::nullopt;
+				size_t declared_dims = varType->getDimensionCounter();
+
+				size_t access_dims = 0;
+				AstExpr* index_chain = ast_element_cast<AstExpr>(expr->right());
+				while (index_chain != nullptr) {
+					access_dims++;
+					index_chain = ast_element_cast<AstExpr>(index_chain->right());
+				}
+				if (declared_dims > 0 && declared_dims == access_dims) {
+					return varType->getType();
+				}
+
+				return std::nullopt;
 			}
 		}
 
@@ -136,7 +171,7 @@ private:
 			return;
 		}
 
-		std::cerr << "Type Error: Incompatible types in binary expression ("
+		std::cerr << "Type Error: Incompatible types in binary expression (" 
 			<< (int)lType << " vs " << (int)rType << ")\n";
 	}
 
@@ -221,4 +256,3 @@ public:
 		analyzeScope(m_mainScope);
 	}
 };
-
