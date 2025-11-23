@@ -1,33 +1,26 @@
 #pragma once
 
 #include <optional>
-#include <iostream> // Do raportowania b³êdów
+#include <iostream> 
 #include <vector>
 
 #include "../ast/AstScope.hpp"
 #include "../ast/AstExpr.hpp"
 #include "../ast/AstElement.hpp"
 #include "../ast/AstType.hpp"
-#include "../ast/CastGraph.hpp" // Zak³adamy, ¿e to jest ten nowy, poprawiony plik
+#include "../ast/CastGraph.hpp"
 #include "../ast/AstBuildSystem.hpp"
-#include "../ast/VariableDecorator.hpp" // Added
-#include "../ast/AstReference.h"      // Added
-#include "../ast/AstVariableDecl.hpp" // Added
-
+#include "../ast/VariableDecorator.hpp" 
+#include "../ast/AstReference.h"      
+#include "../ast/AstVariableDecl.hpp" 
+#include "../Terminal/Terminal.hpp"
 class TypeChecker
 {
 private:
 	AstScope* m_mainScope;
 
-	// WskaŸnik na obecny scope (przydatne przy wejœciu w funkcje/bloki)
 	AstScope* m_currentScope;
 
-	// -------------------------------------------------------------------------
-	// Helpers
-	// -------------------------------------------------------------------------
-
-	// Rozwi¹zuje typ danego wêz³a AST.
-	// W kompilatorach LLVM czêsto nazywane 'getType()' lub 'evaluateType()'
 	std::optional<BasicTypes> resolveType(AstElement* node)
 	{
 		if (!node) return std::nullopt;
@@ -70,7 +63,10 @@ private:
 					}
 				}
 				
-				if (!varDecl) return std::nullopt;
+				if (!varDecl)
+				{
+					return std::nullopt;
+				}
 
 				AstType* varType = varDecl->getVarType();
 				if (!varType || !varType->isArray()) return std::nullopt;
@@ -85,11 +81,9 @@ private:
 				if (declared_dims > 0 && declared_dims == access_dims) {
 					return varType->getType();
 				}
-
-				return std::nullopt;
+				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU003, varDecl->getName());
 			}
 		}
-
 		return std::nullopt;
 	}
 

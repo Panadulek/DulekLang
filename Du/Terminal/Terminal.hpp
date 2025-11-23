@@ -18,6 +18,7 @@ struct Terminal
 	{
 		DU001,
 		DU002,
+		DU003,
 		LAST_ERR
 	};
 	virtual void print(MessageType, CodeList code, std::string_view opt_message) = 0;
