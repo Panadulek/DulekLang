@@ -2,7 +2,10 @@
 #include <list>
 #include "AstElement.hpp"
 #include "AstExpr.hpp"
-#include "AstConst.hpp"
+// AstConst.hpp nie jest już potrzebny w AstList, chyba że gdzieś indziej. 
+// Ale usuwam if na AstConst, więc include też można usunąć.
+#include "AstCast.hpp" // Dodane dla ast_element_cast
+
 class AstList : public AstElement
 {
 protected:
@@ -30,10 +33,10 @@ public:
 	}
 	virtual void push(AstElement* newObject) override
 	{
+        // Przyjmujemy własność obiektu created by 'new' in parser
 		if( auto ptr = ast_element_cast<AstExpr>(newObject))
-			m_list.emplace_back(ptr);
-		else if(auto ptr = ast_element_cast<AstConst>(newObject))
-			m_list.emplace_back(ptr);
+			m_list.emplace_back(std::unique_ptr<AstElement>(ptr));
+        // Usunięto obsługę AstConst - teraz wszystko powinno być AstExpr
 	}
 	virtual AstElement* getFront() override
 	{
@@ -60,5 +63,3 @@ public:
 
 	}
 };
-
-

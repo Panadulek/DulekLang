@@ -3,6 +3,8 @@
 #include <optional>
 #include <iostream> 
 #include <vector>
+#include <variant>
+#include <memory>
 
 #include "../ast/AstScope.hpp"
 #include "../ast/AstExpr.hpp"
@@ -14,132 +16,105 @@
 #include "../ast/AstReference.h"      
 #include "../ast/AstVariableDecl.hpp" 
 #include "../Terminal/Terminal.hpp"
+#include "../ast/AstVisitor.hpp"
+
 class TypeChecker
 {
 private:
 	AstScope* m_mainScope;
-
 	AstScope* m_currentScope;
 
 	std::optional<BasicTypes> resolveType(AstElement* node)
 	{
 		if (!node) return std::nullopt;
 
-		if (auto ref = ast_element_cast<AstRef>(node))
+		if (auto decl = ast_element_cast<AstVariableDecl>(node))
 		{
-			return ref->getType();
+			if (auto type = decl->getVarType()) return type->getType();
 		}
-
-		else if (auto decl = ast_element_cast<AstVariableDecl>(node))
-		{
-			if (auto type = decl->getVarType())
-			{
-				return type->getType();
-			}
-		}
-
 		else if (auto funScope = ast_element_cast<AstScope>(node))
 		{
-			if (auto funData = funScope->getFunctionDecorator())
-			{
-				return funData->getRetType();
-			}
+			if (auto funData = funScope->getFunctionDecorator()) return funData->getRetType();
 		}
 		else if (auto expr = ast_element_cast<AstExpr>(node))
 		{
-			if (auto t = expr->getType()) {
-				return t->getType();
-			}
-			else if (expr->op() == AstExpr::Operation::Arr_Indexing)
-			{
-				AstElement* base_ref_element = expr->left();
-				AstVariableDecl* varDecl = nullptr;
+			if (auto t = expr->getType()) return t->getType();
 
-				if (auto ref_expr = ast_element_cast<AstExpr>(base_ref_element)) {
-					if (ref_expr->op() == AstExpr::Operation::Reference) {
-						if (auto ref = ast_element_cast<AstRef>(ref_expr->right())) {
-							varDecl = ast_element_cast<AstVariableDecl>(ref->ref());
-						}
-					}
-				}
-				
-				if (!varDecl)
-				{
-					return std::nullopt;
-				}
+            return std::visit(overloaded {
+                [](const AstNodes::LiteralExpr& lit) -> std::optional<BasicTypes> { 
+                    return std::visit(overloaded{
+                        [](long long) -> std::optional<BasicTypes> { return BasicTypes::U64; },
+                        [](unsigned long long) -> std::optional<BasicTypes> { return BasicTypes::U64; },
+                        [](double) -> std::optional<BasicTypes> { return BasicTypes::F32; },
+                        [](bool) -> std::optional<BasicTypes> { return BasicTypes::BOOL; },
+                        [](const std::string&) -> std::optional<BasicTypes> { return BasicTypes::STR; }
+                    }, lit.value);
+                },
+                [](const AstNodes::VariableRefExpr& ref) -> std::optional<BasicTypes> { 
+                     if (auto decl = ast_element_cast<AstVariableDecl>(ref.declaration)) {
+                         if (auto type = decl->getVarType()) return type->getType();
+                     }
+                     return std::nullopt; 
+                },
+                [&](const AstNodes::ArrayIndexingExpr& arrIndex) -> std::optional<BasicTypes> {
+                    AstVariableDecl* varDecl = nullptr;
+                    
+                    if (auto* baseExpr = arrIndex.arrayExpr.get()) {
+                         std::visit(overloaded {
+                            [&](const AstNodes::VariableRefExpr& v) {
+                                varDecl = ast_element_cast<AstVariableDecl>(v.declaration);
+                            },
+                            [](auto&&) {}
+                        }, baseExpr->getExpression());
+                    }
 
-				AstType* varType = varDecl->getVarType();
-				if (!varType || !varType->isArray()) return std::nullopt;
-				size_t declared_dims = varType->getDimensionCounter();
+                    if (!varDecl) return std::nullopt;
 
-				size_t access_dims = 0;
-				AstExpr* index_chain = ast_element_cast<AstExpr>(expr->right());
-				while (index_chain != nullptr) {
-					access_dims++;
-					index_chain = ast_element_cast<AstExpr>(index_chain->right());
-				}
-				if (declared_dims > 0 && declared_dims == access_dims) {
-					return varType->getType();
-				}
-				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU003, varDecl->getName());
-			}
+                    AstType* varType = varDecl->getVarType();
+                    if (!varType || !varType->isArray()) return std::nullopt;
+                    
+                    size_t declared_dims = varType->getDimensionCounter();
+                    size_t access_dims = arrIndex.indices.size();
+
+                    if (declared_dims > 0 && declared_dims == access_dims) {
+                        return varType->getType();
+                    }
+                    Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU003, varDecl->getName());
+                    return std::nullopt;
+                },
+                [](auto&&) -> std::optional<BasicTypes> { return std::nullopt; }
+            }, expr->getExpression());
 		}
 		return std::nullopt;
 	}
 
-	// -------------------------------------------------------------------------
-	// Core Logic
-	// -------------------------------------------------------------------------
-
-	// Sprawdza i ewentualnie wstawia w�z�y rzutowania (Implicit Cast)
-	bool tryPromote(AstExpr* parentExpr, bool isLeftChild, BasicTypes targetType, BasicTypes sourceType)
+	bool tryPromote(std::unique_ptr<AstExpr>& childExpr, BasicTypes targetType, BasicTypes sourceType)
 	{
 		if (targetType == sourceType) return true;
 
-		// Sprawd� w grafie, czy istnieje konwersja Source -> Target
 		CastOp op = CastGraph::getCastOp(sourceType, targetType);
-
 		if (op != CastOp::NoOp)
 		{
-
 			auto& factory = AstBuildSystem::Instance().getFactory();
-			
-			
-			if (isLeftChild)
-			{
-				AstElement* element = parentExpr->left();
-				AstExpr* castExpr = factory.exprFactor().createCast(element, op);
-				castExpr->setType(new AstType(targetType));
-				parentExpr->left(castExpr);
-			}
-			else
-			{
-				AstElement* element = parentExpr->right();
-				AstExpr* castExpr = factory.exprFactor().createCast(element, op);
-				castExpr->setType(new AstType(targetType));
-				parentExpr->right(castExpr);
-			}
-			
-			 std::cout << "Inserting Implicit Cast: " << (int)sourceType  << " -> " << (int)targetType << " (Op: " << (int)op << ")\n";
-
+			AstExpr* rawChild = childExpr.release();
+			AstExpr* castExprRaw = factory.exprFactor().createCast(rawChild, op);
+            childExpr.reset(castExprRaw);
+            childExpr->setType(std::make_unique<AstType>(targetType)); 
 			return true;
 		}
-
 		return false;
 	}
 
-	void checkBinaryOp(AstExpr* expr)
+	void checkBinaryOp(AstNodes::BinaryExpr& binOp, AstExpr* parentExpr)
 	{
-		// 1. Najpierw sprawd� dzieci (Bottom-Up traversal)
-		checkExpr(reinterpret_cast<AstExpr*>(expr->left()));
-		checkExpr(reinterpret_cast<AstExpr*>(expr->right()));
+        // Bottom-Up traversal
+		checkExpr(binOp.left.get());
+		checkExpr(binOp.right.get());
 
-		// 2. Pobierz typy dzieci po sprawdzeniu
-		auto lTypeOpt = resolveType(expr->left());
-		auto rTypeOpt = resolveType(expr->right());
+		auto lTypeOpt = resolveType(binOp.left.get());
+		auto rTypeOpt = resolveType(binOp.right.get());
 
 		if (!lTypeOpt || !rTypeOpt) {
-			// B��d: nie uda�o si� ustali� typ�w operand�w
 			std::cerr << "Type Error: Cannot resolve types for binary operation.\n";
 			return;
 		}
@@ -149,96 +124,86 @@ private:
 
 		if (lType == rType)
 		{
-			expr->setType(new AstType(lType));
+			parentExpr->setType(std::make_unique<AstType>(lType));
 			return;
 		}
 
-		if (tryPromote(expr, true, rType, lType))
+		if (tryPromote(binOp.right, lType, rType))
 		{
-			expr->setType(new AstType(rType));
+			parentExpr->setType(std::make_unique<AstType>(lType));
 			return;
 		}
 
-		if (tryPromote(expr, false, lType, rType))
+		if (tryPromote(binOp.left, rType, lType))
 		{
-			expr->setType(new AstType(lType));
+			parentExpr->setType(std::make_unique<AstType>(rType));
 			return;
 		}
 
-		std::cerr << "Type Error: Incompatible types in binary expression (" 
-			<< (int)lType << " vs " << (int)rType << ")\n";
+		std::cerr << "Type Error: Incompatible types (" << (int)lType << " vs " << (int)rType << ")\n";
 	}
 
-	void checkCmpOp(AstExpr* expr)
-	{
-		// 1. Najpierw sprawd dzieci (Bottom-Up traversal)
-		checkExpr(reinterpret_cast<AstExpr*>(expr->left()));
-		checkExpr(reinterpret_cast<AstExpr*>(expr->right()));
+    void checkCmpOp(AstNodes::CmpExpr& cmpOp, AstExpr* parentExpr)
+    {
+        checkExpr(cmpOp.left.get());
+		checkExpr(cmpOp.right.get());
 
-		// 2. Pobierz typy dzieci po sprawdzeniu
-		auto lTypeOpt = resolveType(expr->left());
-		auto rTypeOpt = resolveType(expr->right());
+		auto lTypeOpt = resolveType(cmpOp.left.get());
+		auto rTypeOpt = resolveType(cmpOp.right.get());
 
 		if (!lTypeOpt || !rTypeOpt) {
-			// Bd: nie udao si ustali typw operandw
-			std::cerr << "Type Error: Cannot resolve types for comparison operation.\n";
+			std::cerr << "Type Error: Cannot resolve types for comparison.\n";
 			return;
 		}
 
 		BasicTypes lType = *lTypeOpt;
 		BasicTypes rType = *rTypeOpt;
 
-		if (lType == rType)
-		{
-			// Typy s zgodne, nic nie trzeba robi.
-			return;
-		}
+		if (lType == rType) return;
 
-		// Sprbuj wypromowa lewy do typu prawego
-		if (tryPromote(expr, true, rType, lType))
-		{
-			return;
-		}
+		if (tryPromote(cmpOp.right, lType, rType)) return;
+		if (tryPromote(cmpOp.left, rType, lType)) return;
 
-		// Sprbuj wypromowa prawy do typu lewego
-		if (tryPromote(expr, false, lType, rType))
-		{
-			return;
-		}
-
-		// Jeli promocja niemoliwa, to bd typw.
-		std::cerr << "Type Error: Incompatible types in comparison expression ("
-			<< (int)lType << " vs " << (int)rType << ")\n";
-	}
+		std::cerr << "Type Error: Incompatible types in cmp (" << (int)lType << " vs " << (int)rType << ")\n";
+    }
 
 	void checkExpr(AstExpr* expr)
 	{
 		if (!expr) return;
 
-		if (expr->isBinaryOp())
-		{
-			checkBinaryOp(expr);
-		}
-		else if (expr->isCmpOp())
-		{
-			checkCmpOp(expr);
-		}
-		else if (expr->op() == AstExpr::Operation::Reference)
-		{
-			if (auto ref = ast_element_cast<AstRef>(expr->right()))
-			{
-				auto type = ref->getType();
-				if(type.has_value())
-					expr->setType(new AstType(type.value()));
-			}
-		}
-		else if (expr->op() == AstExpr::Operation::ConstValue)
-		{
-			if (auto constVal = ast_element_cast<AstConst>(expr->right()))
-			{
-				expr->setType(new AstType(constVal->getType()));
-			}
-		}
+        std::visit(overloaded {
+            [&](AstNodes::BinaryExpr& binOp) {
+                checkBinaryOp(binOp, expr);
+            },
+            [&](AstNodes::CmpExpr& cmpOp) {
+                checkCmpOp(cmpOp, expr);
+            },
+            [&](AstNodes::VariableRefExpr& varRef) {
+                 if(auto* decl = ast_element_cast<AstVariableDecl>(varRef.declaration)) {
+                     if(auto* t = decl->getVarType()) {
+                         expr->setType(std::make_unique<AstType>(t->getType()));
+                     }
+                 }
+            },
+            [&](AstNodes::LiteralExpr& lit) {
+                 auto typeOpt = resolveType(expr);
+                 if(typeOpt) expr->setType(std::make_unique<AstType>(*typeOpt));
+            },
+            [&](AstNodes::CastExpr& cast) {
+                checkExpr(cast.expr.get());
+            },
+            [&](AstNodes::FunctionCallExpr& call) {
+                 // Lookup function scope/return type would go here
+                 for(auto& arg : call.args) {
+                     checkExpr(arg.get());
+                 }
+            },
+            [&](AstNodes::ArrayIndexingExpr& idx) {
+                auto typeOpt = resolveType(expr);
+                if(typeOpt) expr->setType(std::make_unique<AstType>(*typeOpt));
+            },
+            [](auto&&) {}
+        }, expr->getExpression());
 	}
 
 	void analyzeScope(AstScope* scope)
@@ -256,7 +221,7 @@ private:
 				if (auto stmt = ast_unique_element_cast<AstStatement>(it))
 				{
 					checkExpr(stmt->rhs());
-					std::optional<BasicTypes>  optType = std::nullopt;
+					std::optional<BasicTypes> optType = std::nullopt;
 					if (stmt->getStmtType() == ::AstStatement::STMT_TYPE::RET_STMT)
 					{
 						optType = resolveType(m_currentScope);
@@ -265,12 +230,20 @@ private:
 					{
 						optType = resolveType(stmt->lhs());
 					}
+                    
 					if (optType.has_value() && stmt->rhs() && stmt->rhs()->getType())
 					{
-						CastOp op = CastGraph::getCastOp(stmt->rhs()->getType()->getType(), *optType);
-						auto cast = AstBuildSystem::Instance().getFactory().exprFactor().createCast(stmt->rhs(), op);
-						cast->setType(new AstType(*optType));
-						stmt->setWrappedRhs(cast);
+                        BasicTypes rhsType = stmt->rhs()->getType()->getType();
+                        BasicTypes targetType = *optType;
+                        
+                        if (rhsType != targetType) {
+						    CastOp op = CastGraph::getCastOp(rhsType, targetType);
+                            if (op != CastOp::NoOp) {
+    						    auto cast = AstBuildSystem::Instance().getFactory().exprFactor().createCast(stmt->rhs(), op);
+						    cast->setType(std::make_unique<AstType>(targetType));
+						    stmt->setWrappedRhs(cast);
+                            }
+                        }
 					}
 				}
 			}
@@ -289,7 +262,6 @@ public:
 	{
 	}
 
-	// Functor entry point
 	void operator ()()
 	{
 		if (!m_mainScope) return;

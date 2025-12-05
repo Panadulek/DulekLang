@@ -1,6 +1,7 @@
 #pragma once
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Module.h>
 #include <cassert>
 #include "../ast/AstStatement.hpp"
 #include "../ast/AstVariableDecl.hpp"
@@ -14,8 +15,11 @@
 #include "../ast/AstCallFun.hpp"
 #include "llvm_cache.hpp"
 #include "../ast/CastGraph.hpp"
+#include "../ast/AstVisitor.hpp"
+
 class llvmStmtGenerator
 {
+public:
 	static llvm::Value* dump_op(llvm::Value* val)
 	{
 		val->dump();
@@ -48,6 +52,7 @@ class llvmStmtGenerator
 			assert(value && value->getType()->isPointerTy() && "Compiler bug: An l-value must be a pointer here.");
 
 			llvm::Type* loadType = getLlvmCache<>().getType(value);
+            // Fallback removed for newer LLVM versions
 			assert(loadType && "Compiler bug: Type for l-value not found in cache.");
 
 			return b.CreateLoad(loadType, value);
@@ -55,286 +60,172 @@ class llvmStmtGenerator
 		return value;
 	}
 
-	static llvm::Value* generateArrayIndexing(AstExpr* expr, llvm::IRBuilder<>& b)
-	{
-		if (!expr)
-			return nullptr;
-		AstExpr* left = ast_element_cast<AstExpr>(expr->left());
-		if (left && left->op() == AstExpr::Operation::Reference)
-		{
-			if (AstRef* ref = ast_element_cast<AstRef>(left->right()))
-			{
-				if(AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(ref->ref()))
-				{
-					if (AstExpr* _expr = ast_element_cast<AstExpr>(expr->right()))
-					{
-						llvm::Value* arr = generateExprInstruction(left, b);
-						llvm::ArrayType* at = generateArrayTypeInstruction(decl->getVarType(), b);
-						auto dims = AstExpr::transformExprToDimsArray(_expr);
-						std::vector<llvm::Value*> llvmIdxs{llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), 0)};
-						if (dims)
-						{
-							for (auto it = dims->begin(); it != dims->end(); ++it)
-							{
+    // --- VISITOR FUNCTOR ---
+    struct LlvmExprVisitor {
+        llvm::IRBuilder<>& b;
+        AstExpr* currentExpr; 
 
-								llvmIdxs.push_back(generateExprInstruction(it->get()->getExpr(), b));
-							}
-							return b.CreateGEP(at, arr, llvmIdxs);
-						}
-					}
-				}
-			}
-		}
-		return nullptr;
-	}
-	static llvm::Value* generateCast(AstExpr* expr, llvm::IRBuilder<>& b)
-	{
-		if (!expr || !expr->getCastOp().has_value())
-			return nullptr;
-		AstElement* left = expr->left();
-		if (left)
-		{
-			llvm::Value* value = nullptr;
-			if (auto subExpr = ast_element_cast<AstExpr>(left))
-			{
-				value = generateExprInstruction(subExpr, b);
-			}
-			else 
-				value = getValueFromExpr(left, b);
-			if (!value)
-				return nullptr;
-			AstType* type = expr->getType();
-			auto srcValue = readLValueFromMemory(left, value, b);
-			if (type)
-			{
-				llvm::Type* destType = LlvmTypeGenerator::convertAstToLlvmType(type->getType());
-				auto op = expr->getCastOp().value();
-				if (op & CastOp::SIToFP) {
-					return b.CreateSIToFP(srcValue, destType, "cast_sitofp");
-				}
-				if (op & CastOp::UIToFP) {
-					return b.CreateUIToFP(srcValue, destType, "cast_uitofp");
-				}
-				if (op & CastOp::FPToSI) {
-					return b.CreateFPToSI(srcValue, destType, "cast_fptosi");
-				}
-				if (op & CastOp::FPToUI) {
-					return b.CreateFPToUI(srcValue, destType, "cast_fptoui");
-				}
-				if (op & CastOp::FPExt) {
-					return b.CreateFPExt(srcValue, destType, "cast_fpext");
-				}
-				if (op & CastOp::FPTrunc) {
-					return b.CreateFPTrunc(srcValue, destType, "cast_fptrunc");
-				}
-				if (op & CastOp::SExt) {
-					return b.CreateSExt(srcValue, destType, "cast_sext");
-				}
-				if (op & CastOp::ZExt) {
-					return b.CreateZExt(srcValue, destType, "cast_zext");
-				}
-				if (op & CastOp::Trunc) {
-					return b.CreateTrunc(srcValue, destType, "cast_trunc");
-				}
-				if (op & CastOp::BitCast) {
-					if (srcValue->getType() != destType) {
-						return b.CreateBitCast(srcValue, destType, "cast_bitcast");
-					}
-					return srcValue; // No-op
-				}
-			}
-			return srcValue;
-		}
-		return nullptr;
-	}
-	static llvm::Value* getValueFromExpr(AstElement* element, llvm::IRBuilder<>& b)
-	{
-		if (AstConst* aconst = ast_element_cast<AstConst>(element))
-		{
-			switch (aconst->getType())
-			{
-			case BasicTypes::U64:
-				return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(aconst->getType()), aconst->get_uint64_t_value());
-			case BasicTypes::BOOL:
-				return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(aconst->getType()), aconst->get_bool_value());
-			case BasicTypes::STR:
-			{
-				
-			}
-			}
-		}
-		else if (AstExpr* expr = ast_element_cast<AstExpr>(element))
-		{
-				return generateExprInstruction(expr, b);
-		}
-		else if (AstRef* ref = ast_element_cast<AstRef>(element))
-		{
-			return  getLlvmCache<>().getValue(ref);
-		
-		}
-		else if (AstCallFun* callFn = dynamic_cast<AstCallFun*>(element))
-		{
-			llvm::Value* fun = getLlvmCache<>().getValue(const_cast<AstScope*>(callFn->getScope()));
-			if (llvm::Function* llvmFun = llvm::dyn_cast<llvm::Function>(fun))
-			{
-				std::string comment = std::format("call {}", callFn->getName());
-				std::vector<llvm::Value*> llvm_args;
-				auto args = callFn->getArgs();
-				for (auto& it : args)
-				{
-					if (AstExpr* expr = ast_unique_element_cast<AstExpr>(it))
-						llvm_args.push_back(generateExprInstruction(expr, b));
-				}
-				return b.CreateCall(llvmFun, llvm_args, comment);
-				
-			}
-		}
-		return nullptr;
-	}
-	static llvm::Value* generateCallFun(AstElement* element, llvm::IRBuilder<>& b)
-	{
-		return nullptr;
-	}
+        LlvmExprVisitor(llvm::IRBuilder<>& builder, AstExpr* expr) : b(builder), currentExpr(expr) {}
 
-	static llvm::Value* generateBinaryOpInstruction(AstElement* leftElem, llvm::Value* l, AstElement* rightElem, llvm::Value* r, llvm::IRBuilder<>& b, AstExpr::Operation op, std::string_view description)
-	{
-		l = readLValueFromMemory(leftElem, l, b);
-		r = readLValueFromMemory(rightElem, r, b);
-		switch (op)
-		{
-			case AstExpr::Operation::Addition:
-				return b.CreateAdd(l, r, description);
-			case AstExpr::Operation::Subtraction:
-				return b.CreateSub(l, r, description);
-			case AstExpr::Operation::Multiplication:
-				return b.CreateMul(l, r, description);
-			case AstExpr::Operation::Division:
-				return b.CreateSDiv(l, r, description);
-			case AstExpr::Operation::Unary_negation:
-				return b.CreateNeg(l, description);
-		}
-	}
-	static llvm::Value* generateCmpOpInstruction(AstExpr* expr, llvm::Value* l, llvm::Value* r, llvm::IRBuilder<>& b, std::string_view description)
-	{
-		assert(expr->op() == AstExpr::Operation::CMP && expr->getCmpOp().has_value());
+        // Recursion helper
+        llvm::Value* visit(AstExpr* expr) {
+            if(!expr) return nullptr;
+            LlvmExprVisitor childVisitor(b, expr);
+            return expr->accept(childVisitor);
+        }
 
-		l = readLValueFromMemory(expr->left(), l, b);
-		r = readLValueFromMemory(expr->right(), r, b);
+        llvm::Value* operator()(AstNodes::BinaryExpr& binOp) {
+             llvm::Value* l = visit(binOp.left.get());
+             llvm::Value* r = visit(binOp.right.get());
+             
+             l = readLValueFromMemory(binOp.left.get(), l, b);
+             r = readLValueFromMemory(binOp.right.get(), r, b);
+             
+             switch(binOp.op) {
+                 case AstNodes::BinaryOpType::Addition: return b.CreateAdd(l, r, "add");
+                 case AstNodes::BinaryOpType::Subtraction: return b.CreateSub(l, r, "sub");
+                 case AstNodes::BinaryOpType::Multiplication: return b.CreateMul(l, r, "mul");
+                 case AstNodes::BinaryOpType::Division: return b.CreateSDiv(l, r, "div");
+             }
+             return nullptr;
+        }
 
-		AstType* operandType = nullptr;
-		if (auto leftExpr = ast_element_cast<AstExpr>(expr->left())) {
-			operandType = leftExpr->getType();
-		}
-		assert(operandType && "Could not determine operand type for comparison");
+        llvm::Value* operator()(AstNodes::CmpExpr& cmpOp) {
+             llvm::Value* l = visit(cmpOp.left.get());
+             llvm::Value* r = visit(cmpOp.right.get());
+             l = readLValueFromMemory(cmpOp.left.get(), l, b);
+             r = readLValueFromMemory(cmpOp.right.get(), r, b);
 
-		auto cop = expr->getCmpOp().value();
+             AstType* type = cmpOp.left->getType(); 
+             if(!type) type = cmpOp.right->getType();
+             assert(type && "Missing type info for CmpOp");
 
-		if (operandType->isFloatingPoint()) {
-			switch (cop) {
-			case AstExpr::CMP_OPERATION::EQUAL:         return b.CreateFCmpOEQ(l, r, description);
-			case AstExpr::CMP_OPERATION::NOT_EQUAL:       return b.CreateFCmpONE(l, r, description);
-			case AstExpr::CMP_OPERATION::GREATER_THAN:    return b.CreateFCmpOGT(l, r, description);
-			case AstExpr::CMP_OPERATION::GREATER_OR_EQ:   return b.CreateFCmpOGE(l, r, description);
-			case AstExpr::CMP_OPERATION::LESS_THAN:       return b.CreateFCmpOLT(l, r, description);
-			case AstExpr::CMP_OPERATION::LESS_OR_EQ:      return b.CreateFCmpOLE(l, r, description);
-			}
-		}
-		else { // Integer or Boolean
-			bool isUnsigned = operandType->isUnsigned() || operandType->getType() == BasicTypes::BOOL;
-			switch (cop) {
-			case AstExpr::CMP_OPERATION::EQUAL:         return b.CreateICmpEQ(l, r, description);
-			case AstExpr::CMP_OPERATION::NOT_EQUAL:       return b.CreateICmpNE(l, r, description);
-			case AstExpr::CMP_OPERATION::GREATER_THAN:    return isUnsigned ? b.CreateICmpUGT(l, r, description) : b.CreateICmpSGT(l, r, description);
-			case AstExpr::CMP_OPERATION::GREATER_OR_EQ:   return isUnsigned ? b.CreateICmpUGE(l, r, description) : b.CreateICmpSGE(l, r, description);
-			case AstExpr::CMP_OPERATION::LESS_THAN:       return isUnsigned ? b.CreateICmpULT(l, r, description) : b.CreateICmpSLT(l, r, description);
-			case AstExpr::CMP_OPERATION::LESS_OR_EQ:      return isUnsigned ? b.CreateICmpULE(l, r, description) : b.CreateICmpSLE(l, r, description);
-			}
-		}
-		return nullptr;
-	}
+             bool isFloat = type->isFloatingPoint();
+             bool isUnsigned = type->isUnsigned() || type->getType() == BasicTypes::BOOL;
+
+             switch(cmpOp.op) {
+                 case AstNodes::CmpOpType::Equal: return isFloat ? b.CreateFCmpOEQ(l, r) : b.CreateICmpEQ(l, r);
+                 case AstNodes::CmpOpType::NotEqual: return isFloat ? b.CreateFCmpONE(l, r) : b.CreateICmpNE(l, r);
+                 case AstNodes::CmpOpType::GreaterThan: return isFloat ? b.CreateFCmpOGT(l, r) : (isUnsigned ? b.CreateICmpUGT(l, r) : b.CreateICmpSGT(l, r));
+                 case AstNodes::CmpOpType::GreaterOrEq: return isFloat ? b.CreateFCmpOGE(l, r) : (isUnsigned ? b.CreateICmpUGE(l, r) : b.CreateICmpSGE(l, r));
+                 case AstNodes::CmpOpType::LessThan: return isFloat ? b.CreateFCmpOLT(l, r) : (isUnsigned ? b.CreateICmpULT(l, r) : b.CreateICmpSLT(l, r));
+                 case AstNodes::CmpOpType::LessOrEq: return isFloat ? b.CreateFCmpOLE(l, r) : (isUnsigned ? b.CreateICmpULE(l, r) : b.CreateICmpSLE(l, r));
+             }
+             return nullptr;
+        }
+
+        llvm::Value* operator()(AstNodes::LiteralExpr& lit) {
+             return std::visit(overloaded{
+                [&](long long v) -> llvm::Value* { return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(BasicTypes::U64), v); }, 
+                [&](unsigned long long v) -> llvm::Value* { return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(BasicTypes::U64), v); }, 
+                [&](bool v) -> llvm::Value* { return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(BasicTypes::BOOL), v); },
+                [&](double v) -> llvm::Value* { return llvm::ConstantFP::get(LlvmTypeGenerator::convertAstToLlvmType(BasicTypes::F32), v); },
+                [&](const std::string&) -> llvm::Value* { return nullptr; /* TODO */ }
+            }, lit.value);
+        }
+
+        llvm::Value* operator()(AstNodes::VariableRefExpr& varRef) {
+             if(varRef.declaration) {
+                 return getLlvmCache<>().getValue(varRef.declaration);
+             } else {
+                 return getAllocInst(varRef.name, b);
+             }
+        }
+
+        llvm::Value* operator()(AstNodes::FunctionCallExpr& call) {
+             llvm::Module* module = b.GetInsertBlock()->getModule();
+             llvm::Function* fun = module->getFunction(call.funcName);
+             if(fun) {
+                 std::vector<llvm::Value*> args;
+                 for(auto& argExpr : call.args) {
+                     args.push_back(visit(argExpr.get()));
+                 }
+                 return b.CreateCall(fun, args);
+             }
+             return nullptr;
+        }
+
+        llvm::Value* operator()(AstNodes::CastExpr& cast) {
+            llvm::Value* srcValue = visit(cast.expr.get());
+            srcValue = readLValueFromMemory(cast.expr.get(), srcValue, b);
+
+            if (!srcValue || !currentExpr->getType()) return nullptr;
+                
+            llvm::Type* destType = LlvmTypeGenerator::convertAstToLlvmType(currentExpr->getType()->getType());
+            auto op = cast.castOp;
+            
+            if (op & CastOp::SIToFP) return b.CreateSIToFP(srcValue, destType, "cast_sitofp");
+            if (op & CastOp::UIToFP) return b.CreateUIToFP(srcValue, destType, "cast_uitofp");
+            if (op & CastOp::FPToSI) return b.CreateFPToSI(srcValue, destType, "cast_fptosi");
+            if (op & CastOp::FPToUI) return b.CreateFPToUI(srcValue, destType, "cast_fptoui");
+            if (op & CastOp::FPExt)  return b.CreateFPExt(srcValue, destType, "cast_fpext");
+            if (op & CastOp::FPTrunc) return b.CreateFPTrunc(srcValue, destType, "cast_fptrunc");
+            if (op & CastOp::SExt)   return b.CreateSExt(srcValue, destType, "cast_sext");
+            if (op & CastOp::ZExt)   return b.CreateZExt(srcValue, destType, "cast_zext");
+            if (op & CastOp::Trunc)  return b.CreateTrunc(srcValue, destType, "cast_trunc");
+            
+            if (op & CastOp::BitCast) {
+                if (srcValue->getType() != destType) return b.CreateBitCast(srcValue, destType, "cast_bitcast");
+                return srcValue; 
+            }
+            
+            return srcValue;
+        }
+
+        llvm::Value* operator()(AstNodes::ArrayIndexingExpr& expr) {
+            llvm::Value* arrBase = visit(expr.arrayExpr.get());
+            AstVariableDecl* decl = nullptr;
+
+            std::visit(overloaded {
+                [&](AstNodes::VariableRefExpr& v) {
+                    decl = ast_element_cast<AstVariableDecl>(v.declaration);
+                },
+                [](auto&&) {}
+            }, expr.arrayExpr->getExpression());
+
+            if (arrBase && decl)
+            {
+                llvm::ArrayType* at = generateArrayTypeInstruction(decl->getVarType(), b);
+                std::vector<llvm::Value*> llvmIdxs{llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), 0)};
+                
+                for (auto& idx : expr.indices) {
+                    llvmIdxs.push_back(visit(idx.get()));
+                }
+                return b.CreateGEP(at, arrBase, llvmIdxs);
+            }
+            return nullptr;
+        }
+        
+        template <typename T>
+        llvm::Value* operator()(T& node) { return nullptr; }
+    };
+
 	static llvm::Value* generateExprInstruction(AstExpr* expr, llvm::IRBuilder<>& b)
 	{
-		if (expr->op() == AstExpr::Operation::Arr_Indexing)
-		{
-			return generateArrayIndexing(expr, b);
-		}
-		else if (expr->op() == AstExpr::Operation::Cast)
-		{
-			return generateCast(expr, b);
-		}
-		else
-		{
-			llvm::Value* l = getValueFromExpr(expr->left(), b);
-			llvm::Value* r = getValueFromExpr(expr->right(), b);
-			std::string description =
-#ifdef _DEBUG
-				std::format("{}, {} and {}", static_cast<uint8_t>(expr->op()), expr->left() ? expr->left()->getName() : "null",
-					expr->right() ? expr->right()->getName() : "null");
-			if (l)
-			{
-				llvm::errs() << "left: \n";
-				l->dump();
-				l->getType()->dump();
-			}
-			if (r)
-			{
-				llvm::errs() << "right: \n";
-				r->dump();
-				r->getType()->dump();
-			}
-#else
-				"";
-#endif
-		
-			if (expr->isBinaryOp())
-			{
-				return generateBinaryOpInstruction(expr->left(), l, expr->right(), r, b, expr->op(), description);
-			}
-			else if (expr->isCmpOp())
-			{
-				return generateCmpOpInstruction(expr, l, r, b, description);
-			}
-			switch (expr->op())
-			{		
-			case AstExpr::Operation::Call_fun:
-				return l;
-			case AstExpr::Operation::Reference:
-			case AstExpr::Operation::ConstValue:
-				return r;
-			default:
-				break;
-			}
-			return nullptr;
-		}
+        if(!expr) return nullptr;
+        LlvmExprVisitor visitor(b, expr);
+        return expr->accept(visitor);
 	}
+
 	static void generateAssgnInstruction(AstStatement* assgn, llvm::IRBuilder<>& b)
 	{
 		if (assgn && assgn->lhs() && assgn->rhs())
 		{
-			llvm::Value* exprInstruction = generateExprInstruction(assgn->rhs(), b);
+			llvm::Value* exprInstruction = generateExprInstruction(ast_element_cast<AstExpr>(assgn->rhs()), b);
 			exprInstruction = readLValueFromMemory(assgn->rhs(), exprInstruction, b);
 			
-			auto bb = b.GetInsertBlock();
 			AstElement* lhs = assgn->lhs();
 			llvm::Value* variable = nullptr;
 			if (AstExpr* expr = ast_element_cast<AstExpr>(lhs))
 			{
-				switch (expr->op())
-				{
-					case AstExpr::Operation::Arr_Indexing:
-					case AstExpr::Operation::Reference:
-					{
-						variable = generateExprInstruction(expr, b);
-						break;
-					}
-					default:
-						assert(0 && "Expr != able to assign");
-						break;
-				}					
+                // LValue expr
+                variable = generateExprInstruction(expr, b);
 			}
 			else
 				 variable = getAllocInst(assgn->lhs()->getName(), b);
-			b.CreateStore(exprInstruction, variable, false);
+            
+            if(variable && exprInstruction)
+			    b.CreateStore(exprInstruction, variable, false);
 		}
 	}
 
@@ -353,6 +244,7 @@ class llvmStmtGenerator
 		llvm::Value* retVal = generateRhsInstruction(stmt, b);
 		if (retVal)
 		{
+            retVal = readLValueFromMemory(stmt->rhs(), retVal, b); 
 			return b.CreateRet(retVal);
 		}
 		return nullptr;
@@ -373,7 +265,7 @@ class llvmStmtGenerator
 			std::size_t idx = 0;
 			for (auto it = begin.value(); it != end.value(); it++)
 			{
-				dims[idx++] = generateExprInstruction(it->get()->getExpr(), b);
+				dims[idx++] = generateExprInstruction(ast_element_cast<AstExpr>(it->get()->getExpr()), b);
 			}
 			llvm::ArrayType* at = nullptr;
 
@@ -404,9 +296,6 @@ class llvmStmtGenerator
 		}
 		return generateArrayTypeInstruction(type, b); 
 	}
-		
-
-
 
 	static llvm::Value* generateDeclInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
 	{
@@ -437,12 +326,13 @@ class llvmStmtGenerator
 			if (rhs)
 			{
 				llvm::Value* initVal = generateExprInstruction(rhs, b);
+                initVal = readLValueFromMemory(rhs, initVal, b);
 				b.CreateStore(initVal, val);
 			}
 		}
 		return val;
 	}
-public:
+
 	static void generateInstruction(AstElement* stmt, llvm::IRBuilder<>& b)
 	{
 		if (!stmt) {

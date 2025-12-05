@@ -9,7 +9,7 @@
 typedef yy::parser::token token;
 
 
-#define YY_DECL int yylex(yy::parser::semantic_type *yylval)
+#define YY_DECL int yylex(yy::parser::semantic_type *yylval, yy::parser::location_type *yylloc)
 
 #ifdef _WIN32
 #include <io.h>

@@ -1,18 +1,20 @@
 #include "VariableDecorator.hpp"
 #include "AstExpr.hpp"
+#include "AstVisitor.hpp" 
+
+struct IsDynamicVisitor {
+    bool operator()(const AstNodes::LiteralExpr&) const { return false; }
+    
+    template<typename T>
+    bool operator()(const T&) const { return true; }
+};
+
 ArrayDecorator::Dimension::Dimension(AstExpr* expr, bool owner) : m_dimension(expr), m_owner(owner)
 {
 	if (!expr)
 		return;
-	switch (expr->op())
-	{
-	case AstExpr::Operation::ConstValue:
-		m_isDynamic = false;
-		break;
-	default:
-		m_isDynamic = true;
-		break;
-	}
+    
+    m_isDynamic = std::visit(IsDynamicVisitor{}, expr->getExpression());
 }
 
 AstExpr* ArrayDecorator::Dimension::getExpr()

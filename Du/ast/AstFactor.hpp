@@ -3,16 +3,16 @@
 #include "AstBuilder.hpp"
 #include <string_view>
 #include <memory>
-#include "AstFactor.hpp"
-#include "AstExpr.hpp"
+#include "AstExpr.hpp" 
 #include <functional>
 #include "AstVariableDecl.hpp"
 #include "AstStatement.hpp"
-#include "AstConst.hpp"
-#include "AstReference.h"
 #include "../Terminal/Terminal.hpp"
 #include "AstCallFun.hpp"
 #include "CastGraph.hpp"
+#include "AstList.hpp"
+#include "AstCast.hpp"
+
 extern AstScope* getActualScope();
 
 class AstBuildSystem;
@@ -26,37 +26,54 @@ class AstFactory
 		std::unique_ptr<AstScope> createFunction(std::string_view name, std::string_view retType, ScopeDecorator::Function::CONTAINER* args);
 	};
 
+    // Helper to convert AstElement* to unique_ptr<AstExpr>
+    static std::unique_ptr<AstExpr> toExpr(AstElement* el) {
+        // Note: 'el' is a raw pointer. We assume ownership as the parser creates objects via 'new'.
+        
+        if (!el) return nullptr;
+
+        if (auto* expr = ast_element_cast<AstExpr>(el)) {
+            return std::unique_ptr<AstExpr>(expr);
+        }
+        return nullptr;
+    }
 
 	struct ExprFactor
 	{
 		AstExpr* createAddExpr(AstElement* left, AstElement* right)
 		{
-			return new AstExpr(left, AstExpr::Operation::Addition, right);
+            AstNodes::BinaryExpr binOp { AstNodes::BinaryOpType::Addition, toExpr(left), toExpr(right) };
+			return new AstExpr(std::move(binOp));
 		}
 		AstExpr* createSubExpr(AstElement* left, AstElement* right)
 		{
-			return new AstExpr (left, AstExpr::Operation::Subtraction, right);
+            AstNodes::BinaryExpr binOp { AstNodes::BinaryOpType::Subtraction, toExpr(left), toExpr(right) };
+			return new AstExpr(std::move(binOp));
 		}
 		AstExpr* createMulExpr(AstElement* left, AstElement* right)
 		{
-			return new AstExpr(left, AstExpr::Operation::Multiplication, right);
+            AstNodes::BinaryExpr binOp { AstNodes::BinaryOpType::Multiplication, toExpr(left), toExpr(right) };
+			return new AstExpr(std::move(binOp));
 		}
 		AstExpr* createDivExpr(AstElement* left, AstElement* right)
 		{
-			return new AstExpr(left, AstExpr::Operation::Division, right);
+            AstNodes::BinaryExpr binOp { AstNodes::BinaryOpType::Division, toExpr(left), toExpr(right) };
+			return new AstExpr(std::move(binOp));
 		}
 		AstExpr* createUnsignedConst(uint64_t val)
 		{
-			return  new AstExpr(nullptr, AstExpr::Operation::ConstValue, new AstConst(val));
+            AstNodes::LiteralExpr lit { val };
+			return new AstExpr(std::move(lit));
 		}
 		AstExpr* createStrConst(std::string_view val)
 		{
-			std::string str(val);
-			return  new AstExpr(nullptr, AstExpr::Operation::ConstValue, new AstConst(str));
+            AstNodes::LiteralExpr lit { std::string(val) };
+			return new AstExpr(std::move(lit));
 		}
 		AstExpr* createBoolConst(bool val)
 		{
-			return  new AstExpr(nullptr, AstExpr::Operation::ConstValue, new AstConst(val));
+            AstNodes::LiteralExpr lit { val };
+			return new AstExpr(std::move(lit));
 		}
 		AstExpr* createRef(std::string_view name)
 		{
@@ -69,58 +86,90 @@ class AstFactory
 				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU001, name);
 				return nullptr;
 			}
-			AstExpr* expr = new AstExpr(nullptr, AstExpr::Operation::Reference, new AstRef(element));
+            
+            AstNodes::VariableRefExpr varRef { std::string(name), element };
+			AstExpr* expr = new AstExpr(std::move(varRef));
 			expr->setValueCategory(ValueCategory::LValue);
 			return expr;
 		}
 
 		AstExpr* createCast(AstElement* exprToCast, CastOp op)
 		{
-			return new AstExpr(exprToCast, AstExpr::Operation::Cast, op);
+            AstNodes::CastExpr castExpr { op, toExpr(exprToCast) };
+			return new AstExpr(std::move(castExpr));
 		}
 		AstExpr* createCmpExpr(AstElement* left, AstExpr::CMP_OPERATION op, AstElement* right)
 		{
-			return new AstExpr(left, AstExpr::Operation::CMP, right, op);
+            AstNodes::CmpOpType newOp;
+            switch(op)
+            {
+                case AstExpr::CMP_OPERATION::EQUAL: newOp = AstNodes::CmpOpType::Equal; break;
+                case AstExpr::CMP_OPERATION::NOT_EQUAL: newOp = AstNodes::CmpOpType::NotEqual; break;
+                case AstExpr::CMP_OPERATION::LESS_THAN: newOp = AstNodes::CmpOpType::LessThan; break;
+                case AstExpr::CMP_OPERATION::GREATER_THAN: newOp = AstNodes::CmpOpType::GreaterThan; break;
+                case AstExpr::CMP_OPERATION::LESS_OR_EQ: newOp = AstNodes::CmpOpType::LessOrEq; break;
+                case AstExpr::CMP_OPERATION::GREATER_OR_EQ: newOp = AstNodes::CmpOpType::GreaterOrEq; break;
+            }
+
+            AstNodes::CmpExpr cmp { newOp, toExpr(left), toExpr(right) };
+			return new AstExpr(std::move(cmp));
 		}
+
 		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
 		{
 			AstElement* element = beginContainer->getElement(funName);
 			if (!element)
 			{
 				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, funName);
+                return nullptr;
 			}
 			if (AstScope* scope = ast_element_cast<AstScope>(element))
 			{
 				if (scope->getFunctionDecorator())
 				{
-					AstElement* callFun = new AstCallFun(dynamic_cast<AstArgs*>(args), scope);
-					return new AstExpr(callFun, AstExpr::Operation::Call_fun, args);
-					
+                    std::vector<std::unique_ptr<AstExpr>> funcArgs;
+                    if (auto* astArgs = dynamic_cast<AstArgs*>(args)) {
+                        for (auto& argPtr : astArgs->getArgs()) {
+                            funcArgs.push_back(toExpr(argPtr.release()));
+                        }
+                    }
+                    if (args) delete args; 
+
+                    AstNodes::FunctionCallExpr call { std::string(funName), std::move(funcArgs) };
+					return new AstExpr(std::move(call));
 				}
 				// TO_DO ERRORS
 			}
+            return nullptr;
 		}
 
 		AstExpr* createArrayIndexingOp(std::string_view varName, ArrayDecorator::Array& dims)
 		{
 			AstScope* scope = getActualScope();
 			AstVariableDecl* element = ast_element_cast<AstVariableDecl>(scope->getElement(varName));
-			AstExpr* expr = nullptr;
+			
 			if (element)
 			{
-				for (int i = dims.size() - 1; i >= 0; --i)
-				{
-					expr = new AstExpr(dims[i]->releaseExpr(), AstExpr::Operation::Arr_Indexing, expr);
-				}
-				if (expr)
-					expr = new AstExpr(createRef(varName), AstExpr::Operation::Arr_Indexing, expr);
+                std::vector<std::unique_ptr<AstExpr>> indices;
+                for(auto& dim : dims) {
+                    if(dim) {
+                         indices.push_back(toExpr(ast_element_cast<AstExpr>(dim->releaseExpr())));
+                    }
+                }
 
-				if (expr)
-					expr->setValueCategory(ValueCategory::LValue);
+                // Create base variable reference
+                AstNodes::VariableRefExpr varRef { std::string(varName), element };
+                auto baseExpr = std::make_unique<AstExpr>(std::move(varRef));
+
+                AstNodes::ArrayIndexingExpr arrIndex { std::move(baseExpr), std::move(indices) };
+                
+				AstExpr* expr = new AstExpr(std::move(arrIndex));
+                expr->setValueCategory(ValueCategory::LValue);
+                return expr;
 			}
 			else
 				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, varName);
-			return expr;
+			return nullptr;
 		}
 
 	};

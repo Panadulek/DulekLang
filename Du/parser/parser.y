@@ -29,6 +29,7 @@ using AstPtr = std::unique_ptr<AstElement>;
 %skeleton "lalr1.cc"  
 %language "C++"       
 %defines        
+%locations
 
 %code requires {
     #include "../ast/AstBuildSystem.hpp"
@@ -41,7 +42,7 @@ using AstPtr = std::unique_ptr<AstElement>;
 
 %code {
 
-    int yylex(yy::parser::semantic_type *yylval);
+    int yylex(yy::parser::semantic_type *yylval, yy::parser::location_type *yylloc);
     #include <iostream>
     #include <format>
 }

@@ -1,127 +1,140 @@
 #pragma once
-#include "AstElement.hpp"
+
+#include <variant>
 #include <memory>
+#include <vector>
+#include <string>
 #include <optional>
-#include <functional>
-#include "AstCast.hpp"
-#include "VariableDecorator.hpp"
 #include "AstType.hpp"
-#include "CastGraph.hpp"
-class AstExpr : public AstElement
-{
+#include "VariableDecorator.hpp"
+#include "CastGraph.hpp" 
+#include "AstElement.hpp"
+
+class AstExpr;
+
+namespace AstNodes {
+
+    enum class BinaryOpType : uint8_t {
+        Addition,
+        Subtraction,
+        Multiplication,
+        Division,
+    };
+
+    enum class CmpOpType : uint8_t {
+        Equal,
+        GreaterThan,
+        LessThan,
+        GreaterOrEq,
+        LessOrEq,
+        NotEqual
+    };
+
+    enum class UnaryOpType : uint8_t {
+        Negation, 
+    };
+
+    // --- Node Structures ---
+
+    struct BinaryExpr {
+        BinaryOpType op;
+        std::unique_ptr<AstExpr> left;
+        std::unique_ptr<AstExpr> right;
+    };
+
+    struct CmpExpr {
+        CmpOpType op;
+        std::unique_ptr<AstExpr> left;
+        std::unique_ptr<AstExpr> right;
+    };
+
+    struct UnaryExpr {
+        UnaryOpType op;
+        std::unique_ptr<AstExpr> operand;
+    };
+
+    struct LiteralExpr {
+        using ValueType = std::variant<long long, unsigned long long, double, bool, std::string>;
+        ValueType value;
+    };
+
+    struct VariableRefExpr {
+        std::string name;
+        AstElement* declaration = nullptr; // Pointer to declaration
+    };
+
+    struct FunctionCallExpr {
+        std::string funcName;
+        std::vector<std::unique_ptr<AstExpr>> args;
+    };
+
+    struct ArrayIndexingExpr {
+        std::unique_ptr<AstExpr> arrayExpr;
+        std::vector<std::unique_ptr<AstExpr>> indices;
+    };
+    
+    struct CastExpr {
+        CastOp castOp; 
+        std::unique_ptr<AstExpr> expr;
+    };
+
+} // namespace AstNodes
+
+class AstExpr : public AstElement {
 public:
-		enum class Operation : uint8_t
-		{
-			Addition = 0,
-			Multiplication,
-			Division,
-			Subtraction,
-			Unary_negation,
-			ConstValue,
-			Reference,
-			Call_fun,
-			Arr_Indexing,
-			Cast,
-			CMP,
-		};
-		enum class CMP_OPERATION : uint8_t
-		{
-			EQUAL,
-			GREATER_THAN,
-			LESS_THAN,
-			GREATER_OR_EQ,
-			LESS_OR_EQ,
-			NOT_EQUAL,
-		};
-		using IndexingArray = ArrayDecorator::Array;
+    // Backward compatibility enums
+    enum class CMP_OPERATION : uint8_t
+    {
+        EQUAL = 0,
+        GREATER_THAN,
+        LESS_THAN,
+        GREATER_OR_EQ,
+        LESS_OR_EQ,
+        NOT_EQUAL,
+    };
+    
+    // Main variant definition
+    using ExprVariant = std::variant<
+        AstNodes::BinaryExpr,
+        AstNodes::CmpExpr,
+        AstNodes::UnaryExpr,
+        AstNodes::LiteralExpr,
+        AstNodes::VariableRefExpr,
+        AstNodes::FunctionCallExpr,
+        AstNodes::ArrayIndexingExpr,
+        AstNodes::CastExpr
+    >;
+
 private:
-	bool isDeleteable(AstElement* toDelete)
-	{
-		if (!toDelete)
-			return false;
-		auto type = toDelete->getAstType();
-		switch (type)
-		{
-		case AstElement::ElementType::REFERENCE:
-		case AstElement::ElementType::CONST_:
-		case AstElement::ElementType::EXPR:
-		case AstElement::ElementType::CALL_FUN:
-			return true;
-		default:
-			return false;
-		}
-	}
-	AstElement* m_left;
-	AstElement* m_right;
-	Operation m_op;
-	std::optional<CastOp> m_castOp;
-	std::optional<CMP_OPERATION> m_cmpOp;
-	std::unique_ptr<AstType> m_type;
-	std::unique_ptr<IndexingArray> createArrayFromIndexingOp();
+    ExprVariant m_expression;
+    
+    // Metadata
+    std::unique_ptr<AstType> m_type; 
+
 public:
+    // Implicit constructors
+    template <typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, AstExpr>>>
+    AstExpr(T&& expr) 
+        : AstElement("expr", AstElement::ElementType::EXPR), 
+          m_expression(std::forward<T>(expr)),
+          m_type(nullptr) 
+    {}
 
-	explicit AstExpr(AstElement* left, Operation op, AstElement* right) : m_left(left), m_op(op), m_right(right), m_type(nullptr), AstElement("expr", AstElement::ElementType::EXPR)
-	{}
-	explicit AstExpr(AstElement* left, Operation op) : m_left(left), m_op(op), m_right(nullptr), m_type(nullptr), AstElement("expr", AstElement::ElementType::EXPR)
-	{}
-	explicit AstExpr(AstElement* left, Operation op, CastOp castOp) : m_left(left), m_op(op), m_right(nullptr), m_type(nullptr), m_castOp(castOp), AstElement("expr", AstElement::ElementType::EXPR)
-	{}
-	explicit AstExpr(AstElement* left, Operation op, AstElement* right, CMP_OPERATION cop) : m_left(left), m_op(op), m_right(right), m_type(new AstType(BasicTypes::BOOL)), m_cmpOp(cop), AstElement("expr", AstElement::ElementType::EXPR) 
-	{}
-	Operation op() const { return m_op; }
-	
-	AstElement* left() const { return m_left; }
-	AstElement* right() const { return m_right; }
-	
-	void left(AstElement* left) { m_left = left; }
-	void right(AstElement* right) { m_right = right; }
+    const ExprVariant& getExpression() const { return m_expression; }
+    ExprVariant& getExpression() { return m_expression; }
 
-	void setType(AstType* type) { m_type.reset(type); }
-	AstType* getType() const { return m_type.get(); }
-	const bool isBinaryOp()
-	{
-		switch (m_op)
-		{
-		case Operation::Addition:
-		case Operation::Subtraction:
-		case Operation::Multiplication:
-		case Operation::Division:
-		case Operation::Arr_Indexing:
-			return true;
-		default:
-			return false;
-		}
-	}
-	const bool isCmpOp()
-	{
-		return m_cmpOp.has_value() && m_op == Operation::CMP;
-	}
-	std::optional <CMP_OPERATION> getCmpOp()
-	{
-		return m_cmpOp;
-	}
-	const bool isCastExpr() const
-	{
-		return m_op == Operation::Cast && m_castOp.has_value();
-	}
-	const std::optional<CastOp> getCastOp() const
-	{
-		return m_castOp;
-	}
+    void setType(std::unique_ptr<AstType> type) { m_type = std::move(type); }
+    AstType* getType() const { return m_type.get(); }
 
-	static std::unique_ptr<IndexingArray> transformExprToDimsArray(AstExpr* expr)
-	{
-		if (!expr || expr->op() != AstExpr::Operation::Arr_Indexing)
-			return nullptr;
-		auto ret = expr->createArrayFromIndexingOp();
-		return ret;
-	}
+    template <typename Visitor>
+    auto accept(Visitor&& visitor) const {
+        return std::visit(std::forward<Visitor>(visitor), m_expression);
+    }
 
-	virtual ~AstExpr()
-	{
-		if (isDeleteable(m_left))
-			delete m_left;
-		if (isDeleteable(m_right))
-			delete m_right;
-	}
+    template <typename Visitor>
+    auto accept(Visitor&& visitor) {
+        return std::visit(std::forward<Visitor>(visitor), m_expression);
+    }
+
+    virtual ~AstExpr() = default;
 };
