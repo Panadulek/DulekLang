@@ -16,6 +16,7 @@
 #include "llvm_cache.hpp"
 #include "../ast/CastGraph.hpp"
 #include "../ast/AstVisitor.hpp"
+#include <iostream>
 
 class llvmStmtGenerator
 {
@@ -52,7 +53,6 @@ public:
 			assert(value && value->getType()->isPointerTy() && "Compiler bug: An l-value must be a pointer here.");
 
 			llvm::Type* loadType = getLlvmCache<>().getType(value);
-            // Fallback removed for newer LLVM versions
 			assert(loadType && "Compiler bug: Type for l-value not found in cache.");
 
 			return b.CreateLoad(loadType, value);
@@ -60,17 +60,41 @@ public:
 		return value;
 	}
 
-    // --- VISITOR FUNCTOR ---
+    static llvm::Value* createImplicitCast(llvm::Value* val, llvm::Type* destType, llvm::IRBuilder<>& b) {
+        if (!val || !destType || val->getType() == destType) return val;
+
+        llvm::Type* srcType = val->getType();
+        
+        if (srcType->isIntegerTy() && destType->isIntegerTy()) {
+            if (srcType->getIntegerBitWidth() > destType->getIntegerBitWidth()) {
+                return b.CreateTrunc(val, destType, "implicit_trunc");
+            } else if (srcType->getIntegerBitWidth() < destType->getIntegerBitWidth()) {
+                return b.CreateSExt(val, destType, "implicit_sext"); 
+            }
+        }
+        
+        if (srcType->isFloatingPointTy() && destType->isFloatingPointTy()) {
+             if (srcType->getTypeID() > destType->getTypeID()) return b.CreateFPTrunc(val, destType);
+             else return b.CreateFPExt(val, destType);
+        }
+
+        if (srcType->isIntegerTy() && destType->isFloatingPointTy()) return b.CreateSIToFP(val, destType);
+        if (srcType->isFloatingPointTy() && destType->isIntegerTy()) return b.CreateFPToSI(val, destType);
+
+        return val;
+    }
+
     struct LlvmExprVisitor {
         llvm::IRBuilder<>& b;
-        AstExpr* currentExpr; 
+        AstExpr* currentExpr;
+        AstType* expectedType; 
 
-        LlvmExprVisitor(llvm::IRBuilder<>& builder, AstExpr* expr) : b(builder), currentExpr(expr) {}
+        LlvmExprVisitor(llvm::IRBuilder<>& builder, AstExpr* expr, AstType* expected) 
+            : b(builder), currentExpr(expr), expectedType(expected) {}
 
-        // Recursion helper
         llvm::Value* visit(AstExpr* expr) {
             if(!expr) return nullptr;
-            LlvmExprVisitor childVisitor(b, expr);
+            LlvmExprVisitor childVisitor(b, expr, nullptr); 
             return expr->accept(childVisitor);
         }
 
@@ -81,6 +105,15 @@ public:
              l = readLValueFromMemory(binOp.left.get(), l, b);
              r = readLValueFromMemory(binOp.right.get(), r, b);
              
+             if(l->getType() != r->getType()) {
+                 if(l->getType()->isIntegerTy() && r->getType()->isIntegerTy()) {
+                     if(l->getType()->getIntegerBitWidth() < r->getType()->getIntegerBitWidth())
+                         l = createImplicitCast(l, r->getType(), b);
+                     else
+                         r = createImplicitCast(r, l->getType(), b);
+                 }
+             }
+
              switch(binOp.op) {
                  case AstNodes::BinaryOpType::Addition: return b.CreateAdd(l, r, "add");
                  case AstNodes::BinaryOpType::Subtraction: return b.CreateSub(l, r, "sub");
@@ -98,10 +131,9 @@ public:
 
              AstType* type = cmpOp.left->getType(); 
              if(!type) type = cmpOp.right->getType();
-             assert(type && "Missing type info for CmpOp");
-
-             bool isFloat = type->isFloatingPoint();
-             bool isUnsigned = type->isUnsigned() || type->getType() == BasicTypes::BOOL;
+             
+             bool isFloat = (l->getType()->isFloatingPointTy());
+             bool isUnsigned = type ? type->isUnsigned() : false;
 
              switch(cmpOp.op) {
                  case AstNodes::CmpOpType::Equal: return isFloat ? b.CreateFCmpOEQ(l, r) : b.CreateICmpEQ(l, r);
@@ -114,13 +146,49 @@ public:
              return nullptr;
         }
 
+        llvm::Value* operator()(AstNodes::UnaryExpr& unOp) {
+            llvm::Value* operand = visit(unOp.operand.get());
+            operand = readLValueFromMemory(unOp.operand.get(), operand, b);
+            switch(unOp.op) {
+                case AstNodes::UnaryOpType::Negation: return b.CreateNeg(operand, "neg");
+            }
+            return nullptr;
+        }
+
         llvm::Value* operator()(AstNodes::LiteralExpr& lit) {
+             llvm::Type* literalLlvmType = nullptr;
+             
+             if (expectedType) {
+                 literalLlvmType = LlvmTypeGenerator::convertAstToLlvmType(expectedType->getType());
+             }
+             else if (currentExpr && currentExpr->getType()) {
+                 literalLlvmType = LlvmTypeGenerator::convertAstToLlvmType(currentExpr->getType()->getType());
+             }
+
+             if (!literalLlvmType) {
+                 return std::visit(overloaded{
+                    [&](long long v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), v); }, 
+                    [&](unsigned long long v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), v); }, 
+                    [&](bool v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt1Ty(b.getContext()), v); },
+                    [&](double v) -> llvm::Value* { return llvm::ConstantFP::get(llvm::Type::getFloatTy(b.getContext()), v); }, 
+                    [&](const std::string&) -> llvm::Value* { return nullptr; }
+                }, lit.value);
+             }
+
              return std::visit(overloaded{
-                [&](long long v) -> llvm::Value* { return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(BasicTypes::U64), v); }, 
-                [&](unsigned long long v) -> llvm::Value* { return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(BasicTypes::U64), v); }, 
-                [&](bool v) -> llvm::Value* { return llvm::ConstantInt::get(LlvmTypeGenerator::convertAstToLlvmType(BasicTypes::BOOL), v); },
-                [&](double v) -> llvm::Value* { return llvm::ConstantFP::get(LlvmTypeGenerator::convertAstToLlvmType(BasicTypes::F32), v); },
-                [&](const std::string&) -> llvm::Value* { return nullptr; /* TODO */ }
+                [&](long long v) -> llvm::Value* { 
+                    return llvm::ConstantInt::get(literalLlvmType, v); 
+                }, 
+                [&](unsigned long long v) -> llvm::Value* { 
+                    return llvm::ConstantInt::get(literalLlvmType, v); 
+                }, 
+                [&](bool v) -> llvm::Value* { 
+                    return llvm::ConstantInt::get(literalLlvmType, v); 
+                },
+                [&](double v) -> llvm::Value* { 
+                    return llvm::ConstantFP::get(literalLlvmType, v); 
+                },
+                [&](const std::string&) -> llvm::Value* { return nullptr; }
             }, lit.value);
         }
 
@@ -149,9 +217,15 @@ public:
             llvm::Value* srcValue = visit(cast.expr.get());
             srcValue = readLValueFromMemory(cast.expr.get(), srcValue, b);
 
-            if (!srcValue || !currentExpr->getType()) return nullptr;
+            llvm::Type* destType = nullptr;
+            if (currentExpr && currentExpr->getType())
+                destType = LlvmTypeGenerator::convertAstToLlvmType(currentExpr->getType()->getType());
+            
+            if (!destType && expectedType)
+                destType = LlvmTypeGenerator::convertAstToLlvmType(expectedType->getType());
+
+            if (!srcValue || !destType) return nullptr;
                 
-            llvm::Type* destType = LlvmTypeGenerator::convertAstToLlvmType(currentExpr->getType()->getType());
             auto op = cast.castOp;
             
             if (op & CastOp::SIToFP) return b.CreateSIToFP(srcValue, destType, "cast_sitofp");
@@ -197,13 +271,16 @@ public:
         }
         
         template <typename T>
-        llvm::Value* operator()(T& node) { return nullptr; }
+        llvm::Value* operator()(T& node) { 
+            assert(false && "Unhandled AST Node in LLVM Expr Visitor");
+            return nullptr; 
+        }
     };
 
-	static llvm::Value* generateExprInstruction(AstExpr* expr, llvm::IRBuilder<>& b)
+	static llvm::Value* generateExprInstruction(AstExpr* expr, llvm::IRBuilder<>& b, AstType* expectedType = nullptr)
 	{
         if(!expr) return nullptr;
-        LlvmExprVisitor visitor(b, expr);
+        LlvmExprVisitor visitor(b, expr, expectedType);
         return expr->accept(visitor);
 	}
 
@@ -211,30 +288,57 @@ public:
 	{
 		if (assgn && assgn->lhs() && assgn->rhs())
 		{
-			llvm::Value* exprInstruction = generateExprInstruction(ast_element_cast<AstExpr>(assgn->rhs()), b);
-			exprInstruction = readLValueFromMemory(assgn->rhs(), exprInstruction, b);
-			
-			AstElement* lhs = assgn->lhs();
+            AstElement* lhs = assgn->lhs();
 			llvm::Value* variable = nullptr;
+            AstType* targetAstType = nullptr;
+
 			if (AstExpr* expr = ast_element_cast<AstExpr>(lhs))
 			{
-                // LValue expr
                 variable = generateExprInstruction(expr, b);
+                targetAstType = expr->getType(); 
+                
+                if (!targetAstType) {
+                     std::visit(overloaded {
+                        [&](AstNodes::VariableRefExpr& v) {
+                            if(auto* decl = ast_element_cast<AstVariableDecl>(v.declaration))
+                                targetAstType = decl->getVarType();
+                        },
+                        [&](AstNodes::ArrayIndexingExpr& idx) {
+                             // Infer type if possible
+                        },
+                        [](auto&&){}
+                     }, expr->getExpression());
+                }
 			}
-			else
+			else {
 				 variable = getAllocInst(assgn->lhs()->getName(), b);
-            
+                 if(AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(lhs)) {
+                     targetAstType = decl->getVarType();
+                 }
+            }
+
+			llvm::Value* exprInstruction = generateExprInstruction(ast_element_cast<AstExpr>(assgn->rhs()), b, targetAstType);
+			exprInstruction = readLValueFromMemory(assgn->rhs(), exprInstruction, b);
+			
+            if (variable && targetAstType) {
+                llvm::Type* valType = LlvmTypeGenerator::convertAstToLlvmType(targetAstType->getType());
+                
+                if (exprInstruction->getType() != valType) {
+                    exprInstruction = createImplicitCast(exprInstruction, valType, b);
+                }
+            }
+
             if(variable && exprInstruction)
 			    b.CreateStore(exprInstruction, variable, false);
 		}
 	}
 
-	static llvm::Value* generateRhsInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
+	static llvm::Value* generateRhsInstruction(AstStatement* stmt, llvm::IRBuilder<>& b, AstType* expectedType = nullptr)
 	{
 		if(stmt)
 			if (AstExpr* expr = ast_element_cast<AstExpr>(stmt->rhs()))
 			{
-				return generateExprInstruction(expr, b);
+				return generateExprInstruction(expr, b, expectedType);
 			}
 		return nullptr;
 	}
@@ -325,8 +429,11 @@ public:
 			getLlvmCache<>().insertElement(val, decl, generatedType);
 			if (rhs)
 			{
-				llvm::Value* initVal = generateExprInstruction(rhs, b);
+				llvm::Value* initVal = generateExprInstruction(rhs, b, type);
                 initVal = readLValueFromMemory(rhs, initVal, b);
+                
+                initVal = createImplicitCast(initVal, generatedType, b);
+
 				b.CreateStore(initVal, val);
 			}
 		}
