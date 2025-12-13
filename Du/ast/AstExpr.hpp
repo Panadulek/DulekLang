@@ -127,12 +127,12 @@ public:
     AstType* getType() const { return m_type.get(); }
 
     template <typename Visitor>
-    auto accept(Visitor&& visitor) const {
+    decltype(auto) accept(Visitor&& visitor) const {
         return std::visit(std::forward<Visitor>(visitor), m_expression);
     }
 
     template <typename Visitor>
-    auto accept(Visitor&& visitor) {
+    decltype(auto) accept(Visitor&& visitor) {
         return std::visit(std::forward<Visitor>(visitor), m_expression);
     }
 

@@ -124,8 +124,8 @@ class AstFactory
 			}
 			if (AstScope* scope = ast_element_cast<AstScope>(element))
 			{
-				scope->accept(overloaded{
-						[&](ScopeDecorator::Function& func) 
+				res = scope->accept(overloaded{
+						[&](ScopeDecorator::Function& func) -> AstExpr*
 						{
 							 std::vector<std::unique_ptr<AstExpr>> funcArgs;
 							if (auto* astArgs = dynamic_cast<AstArgs*>(args)) {
@@ -135,11 +135,11 @@ class AstFactory
 							}
 							if (args) delete args;
 							AstNodes::FunctionCallExpr call { std::string(funName), std::move(funcArgs) };
-							res = new AstExpr(std::move(call));
+							return new AstExpr(std::move(call));
 						},
-						[&](auto&&) 
+						[&](auto&&) -> AstExpr*
 						{
-							res = nullptr;
+							return nullptr;
 						}
 					}
 				);

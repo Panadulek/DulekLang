@@ -9,10 +9,9 @@ class LlvmScopeGenerator
 {
 	llvm::Function* processFunction(AstScope* scope, llvm::Type* type, llvm::IRBuilder<>& b, std::unique_ptr<llvm::Module>& m)
 	{
-		llvm::Function* res = nullptr;
-		scope->accept(
+		return scope->accept(
 			overloaded{
-				[&](ScopeDecorator::Function& func) -> void
+				[&](ScopeDecorator::Function& func) -> llvm::Function*
 				{
 			std::vector<llvm::Type*> types;
 			if (func.hasArgs())
@@ -59,17 +58,15 @@ class LlvmScopeGenerator
 			{
 				llvmStmtGenerator::generateInstruction(it.get(), b);
 			}
-			res = function;
+					return function;
 				},
-				[&](auto&&) -> void
+				[&](auto&&) -> llvm::Function*
 				{
 					assert(0 && "Unsupported scope decorator for function processing");
-					res = nullptr;
+					return nullptr;
 				}
 			}
 		);
-
-		return res;
 	}
 public:
 	llvm::Function* processAstScope(AstScope* scope, llvm::IRBuilder<>& b, std::unique_ptr<llvm::Module>& m)

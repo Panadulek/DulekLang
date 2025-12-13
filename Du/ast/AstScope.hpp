@@ -68,9 +68,9 @@ public:
 	AstElement* getParent() const { return AstElement::getParent(); }
 
 	template<typename Visitor>
-	void accept(Visitor&& visitor)
+	decltype(auto) accept(Visitor&& visitor)
 	{
-		std::visit(std::forward<Visitor>(visitor), m_scopeDecorator);
+		return std::visit(std::forward<Visitor>(visitor), m_scopeDecorator);
 	}
 
 	AstElement* getElement(std::string_view id)
