@@ -297,7 +297,19 @@ private:
 		}
 		else if (auto funScope = ast_element_cast<AstScope>(node))
 		{
-			if (auto funData = funScope->getFunctionDecorator()) return funData->getRetType();
+            std::optional<BasicTypes> ret;
+            funScope->accept(overloaded{
+                [&](ScopeDecorator::Function& func) -> void
+                {
+                    ret = func.getRetType();
+                },
+                [&](auto&&) -> void
+                {
+                    ret = std::nullopt;
+                }
+				});
+            return ret;
+
 		}
 		else if (auto expr = ast_element_cast<AstExpr>(node))
 		{

@@ -24,10 +24,8 @@ public:
 		}
 		else if (AstScope* scope = ast_element_cast<AstScope>(m_ref))
 		{
-			if (ScopeDecorator::Function* fun = scope->getFunctionDecorator())
-			{
-				return fun->getRetType();
-			}
+			return scope->getScopeType();
+
 		}
 		return std::nullopt;
 	}

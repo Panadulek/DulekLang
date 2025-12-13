@@ -113,7 +113,7 @@ public:
  * AST_SCOPE---
  */
 
-AstScope::AstScope(std::string_view name, AstElement* parent) : AstElement(name, AstElement::ElementType::SCOPE, parent), m_function(nullptr)
+AstScope::AstScope(std::string_view name, AstElement* parent) : AstElement(name, AstElement::ElementType::SCOPE, parent), m_scopeDecorator(std::monostate())
 {}
 auto AstScope::getFilteredViewByNotKeywordName()
 {

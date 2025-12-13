@@ -9,13 +9,15 @@ class LlvmScopeGenerator
 {
 	llvm::Function* processFunction(AstScope* scope, llvm::Type* type, llvm::IRBuilder<>& b, std::unique_ptr<llvm::Module>& m)
 	{
-		
-		if ( ScopeDecorator::Function* _fun = scope->getFunctionDecorator())
-		{
+		llvm::Function* res = nullptr;
+		scope->accept(
+			overloaded{
+				[&](ScopeDecorator::Function& func) -> void
+				{
 			std::vector<llvm::Type*> types;
-			if (_fun->hasArgs())
+			if (func.hasArgs())
 			{
-				auto args = _fun->getArgs();
+				auto args = func.getArgs();
 				for (auto it : args)
 				{
 					if (AstVariableDecl* var = ast_element_cast<AstVariableDecl>(it))
@@ -32,6 +34,8 @@ class LlvmScopeGenerator
 					}
 				}
 			}
+
+
 			llvm::GlobalValue::LinkageTypes linkage = llvm::GlobalValue::PrivateLinkage;
 			if (scope->getName() == "main") {
 				linkage = llvm::GlobalValue::ExternalLinkage;
@@ -41,9 +45,9 @@ class LlvmScopeGenerator
 			auto bb = llvm::BasicBlock::Create(getContext(), "entry", function);
 			b.SetInsertPoint(bb);
 			llvm::Function::arg_iterator argsIt = function->arg_begin();
-			if (_fun->hasArgs())
+			if (func.hasArgs())
 			{
-				auto args = _fun->getArgs();
+				auto args = func.getArgs();
 				for (auto it : args)
 				{
 					llvm::Value* val = argsIt++;
@@ -55,9 +59,17 @@ class LlvmScopeGenerator
 			{
 				llvmStmtGenerator::generateInstruction(it.get(), b);
 			}
-			return function;
-		}
-		return nullptr;
+			res = function;
+				},
+				[&](auto&&) -> void
+				{
+					assert(0 && "Unsupported scope decorator for function processing");
+					res = nullptr;
+				}
+			}
+		);
+
+		return res;
 	}
 public:
 	llvm::Function* processAstScope(AstScope* scope, llvm::IRBuilder<>& b, std::unique_ptr<llvm::Module>& m)

@@ -21,7 +21,27 @@ namespace ScopeDecorator
 		Function(BasicTypes retType, CONTAINER* args, AstScope* scope);
 		Function() = delete;
 		Function(Function&) = delete;
-		Function(Function&&) = delete;
+		Function(Function&& other)
+		{
+			m_retType = std::move(other.m_retType);
+			m_args = std::move(other.m_args);
+			m_ptrToScope = other.m_ptrToScope;
+		}
+
+		Function& operator=(Function&& other) noexcept
+		{
+			if (this != &other) 
+			{
+
+				m_retType = std::move(other.m_retType);
+				m_args = std::move(other.m_args);
+				m_ptrToScope = other.m_ptrToScope;
+
+				other.m_ptrToScope = nullptr;
+			}
+			return *this;
+		}
+
 		~Function();
 		bool isProcedure() const;
 		bool hasRetType() const;

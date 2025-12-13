@@ -33,10 +33,8 @@ public:
 	}
 	virtual void push(AstElement* newObject) override
 	{
-        // Przyjmujemy własność obiektu created by 'new' in parser
 		if( auto ptr = ast_element_cast<AstExpr>(newObject))
 			m_list.emplace_back(std::unique_ptr<AstElement>(ptr));
-        // Usunięto obsługę AstConst - teraz wszystko powinno być AstExpr
 	}
 	virtual AstElement* getFront() override
 	{

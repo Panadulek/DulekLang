@@ -22,8 +22,7 @@ public:
 			m_args.reset(new AstArgs());
 		m_argsResolved = resolve();
 	}
-	explicit AstCallFun(AstArgs* args, AstScope* scope) : AstCallFun(args, scope->getFunctionDecorator()) 
-	{}
+
 	const AstScope* getScope() const { return m_fun->getFun(); }
 	std::span<std::unique_ptr<AstElement>> getArgs() { return m_args->getArgs(); }
 	std::string_view getFunName() {m_fun->getFunName();}

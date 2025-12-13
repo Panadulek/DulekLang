@@ -26,9 +26,8 @@ class AstFactory
 		std::unique_ptr<AstScope> createFunction(std::string_view name, std::string_view retType, ScopeDecorator::Function::CONTAINER* args);
 	};
 
-    // Helper to convert AstElement* to unique_ptr<AstExpr>
     static std::unique_ptr<AstExpr> toExpr(AstElement* el) {
-        // Note: 'el' is a raw pointer. We assume ownership as the parser creates objects via 'new'.
+        
         
         if (!el) return nullptr;
 
@@ -118,29 +117,34 @@ class AstFactory
 		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
 		{
 			AstElement* element = beginContainer->getElement(funName);
+			AstExpr* res = nullptr;
 			if (!element)
 			{
 				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, funName);
-                return nullptr;
 			}
 			if (AstScope* scope = ast_element_cast<AstScope>(element))
 			{
-				if (scope->getFunctionDecorator())
-				{
-                    std::vector<std::unique_ptr<AstExpr>> funcArgs;
-                    if (auto* astArgs = dynamic_cast<AstArgs*>(args)) {
-                        for (auto& argPtr : astArgs->getArgs()) {
-                            funcArgs.push_back(toExpr(argPtr.release()));
-                        }
-                    }
-                    if (args) delete args; 
-
-                    AstNodes::FunctionCallExpr call { std::string(funName), std::move(funcArgs) };
-					return new AstExpr(std::move(call));
-				}
-				// TO_DO ERRORS
+				scope->accept(overloaded{
+						[&](ScopeDecorator::Function& func) 
+						{
+							 std::vector<std::unique_ptr<AstExpr>> funcArgs;
+							if (auto* astArgs = dynamic_cast<AstArgs*>(args)) {
+							for (auto& argPtr : astArgs->getArgs()) {
+									funcArgs.push_back(toExpr(argPtr.release()));
+								}
+							}
+							if (args) delete args;
+							AstNodes::FunctionCallExpr call { std::string(funName), std::move(funcArgs) };
+							res = new AstExpr(std::move(call));
+						},
+						[&](auto&&) 
+						{
+							res = nullptr;
+						}
+					}
+				);
 			}
-            return nullptr;
+            return res;
 		}
 
 		AstExpr* createArrayIndexingOp(std::string_view varName, ArrayDecorator::Array& dims)

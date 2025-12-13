@@ -13,18 +13,20 @@
 #include "AstCast.hpp"
 #include <unordered_map>
 #include <optional>
+#include <variant>
+#include "AstVisitor.hpp"
 
 class AstScope final : public AstElement
 {
 	using Function = ScopeDecorator::Function;
-
+	using ScopeVariant = std::variant<std::monostate, Function>;
 	class Global;
 
 	std::vector<std::unique_ptr<AstElement>> m_elements;
 	std::vector<std::unique_ptr<AstElement>> m_stmts;
-	std::unordered_map<std::string_view, AstElement*> m_lookupMap;
-	std::unique_ptr<Function> m_function;
-	
+	std::unordered_map<std::string_view, AstElement*> m_lookupMap;	
+	ScopeVariant m_scopeDecorator;
+
 	template<typename Container, typename Predicate>
 	auto filterView(Container& container, Predicate predicate)
 	{
@@ -51,7 +53,7 @@ class AstScope final : public AstElement
 
 	void setUpFunction(BasicTypes retType, Function::CONTAINER* args)
 	{
-		m_function = std::make_unique<Function>(retType, args, this);
+		m_scopeDecorator = Function(retType, args, this);
 	}
 
 
@@ -64,7 +66,13 @@ public:
 	std::span<std::unique_ptr<AstElement>> getElements();
 	std::span<std::unique_ptr<AstElement>> getStmts();
 	AstElement* getParent() const { return AstElement::getParent(); }
-	Function* getFunctionDecorator() const { return m_function.get(); }
+
+	template<typename Visitor>
+	void accept(Visitor&& visitor)
+	{
+		std::visit(std::forward<Visitor>(visitor), m_scopeDecorator);
+	}
+
 	AstElement* getElement(std::string_view id)
 	{
 		for (auto& it : m_elements)
@@ -72,16 +80,31 @@ public:
 			if (it->getName() == id)
 				return it.get();
 		}
-		if (m_function &&  m_function->hasArgs())
-		{
-			auto args = m_function->getArgs();
-			for (auto& it : args)
-			{
-				if (it->getName() == id)
-					return it;
+
+		AstElement* res = std::visit(
+			overloaded{
+				[&](ScopeDecorator::Function& func) -> AstElement*
+				{
+					if (func.hasArgs())
+					{
+						auto args = func.getArgs();
+						for (auto& it : args)
+						{
+							if (it->getName() == id)
+								return it;
+						}
+					}
+					return nullptr; 
+				},
+
+			[&](auto&&) -> AstElement* {
+				return nullptr;
 			}
-		}
-		AstElement* ret = nullptr;
+			}, m_scopeDecorator);
+
+		if (res)
+			return res;
+
 		if (getParent())
 		{
 			AstScope* parentScope = ast_element_cast<AstScope>(getParent());
@@ -94,19 +117,20 @@ public:
 
 	std::optional<BasicTypes> getScopeType()
 	{
-		std::optional<BasicTypes> ret;
-		if (m_function)
-		{
-			if (m_function->hasRetType())
-			{
-				return m_function->getRetType();
-			}
-			else
-			{
-				return std::make_optional(BasicTypes::VOID_TYPE);
-			}
-		}
-		return std::nullopt;
+		std::optional<BasicTypes> ret = std::visit(
+			overloaded{
+				[&](ScopeDecorator::Function& func) -> std::optional<BasicTypes>
+				{
+					return func.getRetType();
+				},
+				[&](auto&&) -> std::optional<BasicTypes>
+				{
+					return std::nullopt;
+				}
+			}, m_scopeDecorator);
+
+
+		return ret;
 	}
 
 	struct GlobalApi
