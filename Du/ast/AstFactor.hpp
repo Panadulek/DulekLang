@@ -34,6 +34,7 @@ class AstFactory
         if (auto* expr = ast_element_cast<AstExpr>(el)) {
             return std::unique_ptr<AstExpr>(expr);
         }
+		assert(0 && "Unsupported AstElement to AstExpr conversion BUG ALERT MEMORY_LEAK");
         return nullptr;
     }
 
