@@ -1,134 +1,137 @@
-%{
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <vector>
-#include <memory>
-#include <iostream>
-
-#include "../ast/AstElement.hpp"
-#include "../ast/AstBuildSystem.hpp"
-#include "../ast/BasicType.hpp"
-#include "../ast/AstList.hpp"
-#include "../Terminal/Terminal.hpp"
-#include "../ast/VariableDecorator.hpp"
-
-extern int __cdecl yylex();
-void yyerror(const char* s);
-extern char* yytext;
-extern "C" int yywrap();
-
-AstScope* getActualScope()
-{
-   return AstBuildSystem::Instance().getBuilder().getActualScope();
-}
-
-using AstPtr = std::unique_ptr<AstElement>;
-%}
-
-%skeleton "lalr1.cc"  
-%language "C++"       
-%defines        
+%skeleton "lalr1.cc"
+%language "C++"
+%defines
 %locations
+%debug
+
+%define api.value.type variant
+%define api.token.constructor
 
 %code requires {
-    #include "../ast/AstBuildSystem.hpp"
-    #include "../ast/AstElement.hpp"
+    #include <cstdio>
+    #include <cstdlib>
+    #include <cstring>
     #include <vector>
-    #include "../ast/BasicType.hpp"
+    #include <memory>
     #include <iostream>
+    #include <algorithm>
+
+    #include "../ast/AstElement.hpp"
+    #include "../ast/AstBuildSystem.hpp"
+    #include "../ast/BasicType.hpp"
+    #include "../ast/AstList.hpp"
+    #include "../Terminal/Terminal.hpp"
     #include "../ast/VariableDecorator.hpp"
+    #include "../ast/AstExpr.hpp"
+    #include "../ast/ScopeDecorator.hpp"
+
+    AstScope* getActualScope();
 }
 
 %code {
-
-    int yylex(yy::parser::semantic_type *yylval, yy::parser::location_type *yylloc);
     #include <iostream>
     #include <format>
+    yy::parser::symbol_type yylex();
+
+    AstScope* getActualScope()
+    {
+        return AstBuildSystem::Instance().getBuilder().getActualScope();
+    }
 }
 
-%union {
-    int intval;
-    AstElement* astval;
-    AstList* astlist;
-    char* strval;
-    ScopeDecorator::Function::CONTAINER* scopeInputList;
-    ArrayDecorator::Array* arrayDecorator;
-    AstExpr::CMP_OPERATION cmp_op; /* Enum dla operatorów */
-}
-
-/* Tokeny */
 %token ARROW_TOKEN RET_STMT
-%token<strval> ID_TOKEN CONST_STR
-%token<intval> NUMBER_TOKEN
-%token TRUE_TOKEN FALSE_TOKEN 
-%debug 
+%token <std::string> ID_TOKEN CONST_STR
+%token <int> NUMBER_TOKEN
+%token TRUE_TOKEN FALSE_TOKEN
 %token EQ NE LT GT LE GE
 
+%token PLUS "+"
+%token MINUS "-"
+%token MULT "*"
+%token DIV "/"
+%token ASSIGN "="
+%token SEMICOLON ";"
+%token COMMA ","
+%token LPAREN "("
+%token RPAREN ")"
+%token LBRACE "{"
+%token RBRACE "}"
+%token LBRACKET "["
+%token RBRACKET "]"
+
 %nonassoc EQ NE LT GT LE GE
-
-%left '+' '-'
-
-%left '*' '/'
-
+%left PLUS MINUS
+%left MULT DIV
 %right UMINUS
 
-/* Typy dla reguł */
-%type <astval> expr expr_index_op decl_expr decl_fun decl_fun_header stmt
-%type <astlist> expr_list 
-%type <scopeInputList> decl_expr_list
-%type <arrayDecorator> dimension_list
-%type <cmp_op> cmp_op /* Pomocnicza reguła zwracająca typ enuma */
+/* ZMIANA: Powrót do surowych wskaźników w wariancie, aby uniknąć problemów z kopiowaniem unique_ptr */
+%type <AstExpr*> expr expr_index_op
+%type <AstElement*> decl_expr decl_fun decl_fun_header stmt
+%type <AstArgs*> expr_list
+%type <ScopeDecorator::Function::CONTAINER*> decl_expr_list
+%type <ArrayDecorator::Array*> dimension_list
+%type <AstExpr::CMP_OPERATION> cmp_op
+
+/* DESTRUKTOR: Jeśli wystąpi błąd składni, Bison wywoła to dla symboli na stosie */
+// %destructor { delete $$; } <AstExpr*> <AstElement*> <AstArgs*> <ScopeDecorator::Function::CONTAINER*> <ArrayDecorator::Array*>
 
 %start program
 
 %%
 
 program:
-    | program stmt {}
+    %empty
+    | program stmt {
+    }
 ;
 
 stmt:
-      ID_TOKEN '=' expr ';'
+      ID_TOKEN ASSIGN expr SEMICOLON
     {
-        AstScope* scope = getActualScope();
-        /* Uwaga: getElement może być potrzebny do sprawdzenia, czy zmienna istnieje */
-        AstElement* lhs = scope->getElement($1); 
-        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable($1, $3, getActualScope());
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
-        free($1); /* Pamiętaj o zwalnianiu ID */
+        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable($1, $3, getActualScope());
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
+        $$ = nullptr; 
     }
-    | expr_index_op '=' expr ';'
+    | expr_index_op ASSIGN expr SEMICOLON
     {
-        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable($1, $3);
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
+        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable($1, $3);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
+        $$ = nullptr;
     }
-    | decl_expr ';'
+    | decl_expr SEMICOLON
     {
-        AstPtr ptr($1);
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(ptr));
-        /* Tutaj tworzysz Statement z deklaracji? Upewnij się, że nie dublujesz elementów w Builderze */
-        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createDeclStmt($1);
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
+        AstElement* decl = $1;
+        AstBuildSystem::Instance().getBuilder().addElement(std::unique_ptr<AstElement>(decl));
+        
+        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createDeclStmt(decl);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
+        $$ = nullptr;
     }
-    | decl_expr '=' expr ';'
+    | decl_expr ASSIGN expr SEMICOLON
     {
-        AstPtr ptr($1);
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(ptr));
-        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createDeclStmt($1, ast_element_cast<AstExpr>($3));
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
+        AstElement* decl = $1;
+        AstBuildSystem::Instance().getBuilder().addElement(std::unique_ptr<AstElement>(decl));
+
+        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createDeclStmt(decl, $3);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
+        $$ = nullptr;
     }
-    | expr ';'
+    | expr SEMICOLON
     {
-        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createStmt($1);
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
+        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createStmt($1);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
+        $$ = nullptr;
     }
-    | RET_STMT expr ';'
+    | RET_STMT expr SEMICOLON
     {
-        AstPtr stmt = AstBuildSystem::Instance().getFactory().stmtFactor().createRetStmt($2);
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt));
+        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createRetStmt($2);
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
+        $$ = nullptr;
     }
     | decl_fun
+    {
+        $$ = nullptr;
+    }
 ;
 
 stmt_list:
@@ -136,35 +139,32 @@ stmt_list:
     | stmt_list stmt
 ;
 
-/* --- GŁÓWNA REGUŁA WYRAŻEŃ --- */
 expr:
-      expr '+' expr 
+      expr PLUS expr
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createAddExpr($1, $3);
     }
-    | expr '-' expr 
+    | expr MINUS expr
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createSubExpr($1, $3);
     }
-    | expr '*' expr 
+    | expr MULT expr
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createMulExpr($1, $3);
     }
-    | expr '/' expr
+    | expr DIV expr
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createDivExpr($1, $3);
     }
     | expr cmp_op expr %prec EQ
     {
-
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCmpExpr($1, $2, $3);
     }
-    | '-' expr %prec UMINUS
+    | MINUS expr %prec UMINUS
     {
-
-       
+        $$ = nullptr; 
     }
-    | '(' expr ')' 
+    | LPAREN expr RPAREN
     {
         $$ = $2;
     }
@@ -183,24 +183,20 @@ expr:
     | CONST_STR
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createStrConst($1);
-        free($1);
     }
     | ID_TOKEN
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createRef($1);
-        free($1);
     }
-    | ID_TOKEN '(' expr_list ')'
+    | ID_TOKEN LPAREN expr_list RPAREN
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1, getActualScope(), $3);
-        free($1);
     }
-    | ID_TOKEN '(' ')'
+    | ID_TOKEN LPAREN RPAREN
     {
         $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1, getActualScope(), nullptr);
-        free($1);
     }
-    | expr_index_op // Tablice
+    | expr_index_op
     {
         $$ = $1;
     }
@@ -218,10 +214,8 @@ cmp_op:
 expr_index_op:
     ID_TOKEN dimension_list
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp($1, *$2);
-        free($1);
-        /* dimension_list (arrayDecorator) powinien być zarządzany przez createArrayIndexingOp, albo usunięty ręcznie */
-        delete $2; 
+        std::unique_ptr<ArrayDecorator::Array> dims($2); // RAII
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp($1, *dims);
     }
 ;
 
@@ -230,23 +224,23 @@ expr_list:
         $$ = new AstArgs();
         $$->push($1);
     }
-    | expr_list ',' expr
+    | expr_list COMMA expr
     {
-        $$ = $1; /* $1 to wskaźnik na listę, po prostu dodajemy do niej */
+        $$ = $1;
         $$->push($3);
     }
 ;
 
 dimension_list:
-    '[' expr ']' 
+    LBRACKET expr RBRACKET
     {
         $$ = new ArrayDecorator::Array();
-        $$->emplace_back(std::make_unique<ArrayDecorator::Dimension>(ast_element_cast<AstExpr>($2)));
+        $$->emplace_back(std::make_unique<ArrayDecorator::Dimension>($2));
     }
-    | dimension_list '[' expr ']'
+    | dimension_list LBRACKET expr RBRACKET
     {
         $$ = $1;
-        $$->emplace_back(std::make_unique<ArrayDecorator::Dimension>(ast_element_cast<AstExpr>($3)));
+        $$->emplace_back(std::make_unique<ArrayDecorator::Dimension>($3));
     }
 ;
 
@@ -254,15 +248,10 @@ decl_expr:
     ID_TOKEN ID_TOKEN
     {
         $$ = AstBuildSystem::Instance().getFactory().varFactor().createVariable($1, $2, getActualScope()).release();
-        free($1); // Typ zmiennej
-        free($2); // Nazwa zmiennej
     }
     | ID_TOKEN ID_TOKEN dimension_list
     {
         $$ = AstBuildSystem::Instance().getFactory().varFactor().createArray($1, $2, $3, getActualScope()).release();
-        free($1);
-        free($2);
-        // dimension_list ($3) został zużyty przez createArray (zakładam, że przejmuje on ownership)
     }
 ;
 
@@ -272,41 +261,36 @@ decl_expr_list:
         $$ = new ScopeDecorator::Function::CONTAINER();
         $$->emplace_back($1);
     }
-    | decl_expr_list ',' decl_expr
+    | decl_expr_list COMMA decl_expr
     {
         $$ = $1;
         $$->emplace_back($3);
     }
 ;
 
-decl_fun_header: 
-    ID_TOKEN '(' ')' ARROW_TOKEN ID_TOKEN 
+decl_fun_header:
+    ID_TOKEN LPAREN RPAREN ARROW_TOKEN ID_TOKEN
     {
-        auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $5, nullptr);
-        auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
+        auto fun_uptr = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $5, nullptr);
+        AstElement* funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun_uptr));
         AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
-        $$ = funRawPtr; 
-        free($1); // Nazwa funkcji
-        free($5); // Typ zwracany (to też jest ID_TOKEN<strval>!)
-    } 
+        $$ = nullptr; 
+    }
     |
-    ID_TOKEN '(' decl_expr_list ')' ARROW_TOKEN ID_TOKEN 
+    ID_TOKEN LPAREN decl_expr_list RPAREN ARROW_TOKEN ID_TOKEN
     {
-        auto fun = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $6, $3);
-        auto funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun));
+        auto fun_uptr = AstBuildSystem::Instance().getFactory().scopeFactor().createFunction($1, $6, $3);
+        AstElement* funRawPtr = AstBuildSystem::Instance().getBuilder().addElement(std::move(fun_uptr));
         AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
-        $$ = funRawPtr;
-        free($1); // Nazwa funkcji
-        free($6); // Typ zwracany
-        delete $3; // scopeInputList (pointer container) - jeśli createFunction robi kopię, to trzeba usunąć. Jeśli przejmuje ownership - nie usuwaj.
-    } 
+        $$ = nullptr;
+    }
 ;
-    
+
 decl_fun:
-    decl_fun_header '{' stmt_list '}'
+    decl_fun_header LBRACE stmt_list RBRACE
     {
          AstBuildSystem::Instance().getBuilder().exitScope();
-         $$ = $1;
+         $$ = nullptr;
     }
 ;
 
@@ -314,13 +298,10 @@ decl_fun:
 
 void yy::parser::error(const location_type& l, const std::string& m)
 {
-    // Standard format: file:line:col: error message
-    // If you don't use filenames yet, you can remove the filename part
     std::string filename = (l.begin.filename) ? *l.begin.filename : "unknown";
-
-    std::cerr << std::format("{}:{}:{}: {}\n", 
-                             filename, 
-                             l.begin.line, 
-                             l.begin.column, 
+    std::cerr << std::format("{}:{}:{}: {}\n",
+                             filename,
+                             l.begin.line,
+                             l.begin.column,
                              m);
 }
