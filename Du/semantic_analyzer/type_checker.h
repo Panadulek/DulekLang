@@ -144,9 +144,9 @@ struct TypeCheckVisitor {
 		if (op != CastOp::NoOp) {
 			auto& factory = AstBuildSystem::Instance().getFactory();
 			AstExpr* rawChild = childExpr.release();
-			AstExpr* castExprRaw = factory.exprFactor().createCast(rawChild, op);
-            childExpr.reset(castExprRaw);
-            childExpr->setType(std::make_unique<AstType>(targetType)); 
+			auto castExprUnique = factory.exprFactor().createCast(rawChild, op);
+            castExprUnique->setType(std::make_unique<AstType>(targetType)); 
+            childExpr = std::move(castExprUnique);
 			return true;
 		}
 		return false;
@@ -167,6 +167,7 @@ struct TypeCheckVisitor {
     // --- VISIT METHODS ---
 
     void operator()(AstNodes::BinaryExpr& binOp) {
+        std::cout << "Checker: Binary L: " << binOp.left.get() << " R: " << binOp.right.get() << std::endl;
         check(binOp.left.get());
         check(binOp.right.get());
 
@@ -371,9 +372,9 @@ private:
                             }
 
                             if (op != CastOp::NoOp) {
-                                auto cast = AstBuildSystem::Instance().getFactory().exprFactor().createCast(stmt->rhs(), op);
+                                auto cast = AstBuildSystem::Instance().getFactory().exprFactor().createCast(stmt->releaseRhs().release(), op);
                                 cast->setType(std::make_unique<AstType>(targetType));
-                                stmt->setWrappedRhs(cast);
+                                stmt->setWrappedRhs(std::move(cast));
                             }
                         }
                     }

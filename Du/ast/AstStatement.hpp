@@ -5,7 +5,9 @@
 #include "AstVariableDecl.hpp"
 class AstStatement : public AstElement
 {
-	AstElement* m_lhs;
+	AstElement* m_lhsRef = nullptr;
+	std::unique_ptr<AstExpr> m_lhsExpr = nullptr;
+
 	std::unique_ptr<AstExpr> m_rhs;
 	enum class TYPE
 	{
@@ -19,15 +21,13 @@ class AstStatement : public AstElement
 public:
 	using STMT_TYPE = TYPE;
 	AstStatement() = delete;
-	explicit AstStatement(AstElement*, AstExpr*, STMT_TYPE type);
-	explicit AstStatement(AstVariableDecl*, AstExpr*);
+	explicit AstStatement(std::unique_ptr<AstExpr> lhs, std::unique_ptr<AstExpr> rhs, STMT_TYPE type);
+	explicit AstStatement(AstElement*, std::unique_ptr<AstExpr>, STMT_TYPE type);
+	explicit AstStatement(AstVariableDecl*, std::unique_ptr<AstExpr>);
 	const STMT_TYPE getStmtType() const { return m_stmtType; }
 	AstExpr* rhs() { return m_rhs.get(); }
-	void setWrappedRhs(AstExpr* expr) { m_rhs.release(); m_rhs.reset(expr); }
-	AstElement* lhs() { return m_lhs; }
-	~AstStatement()
-	{
-		if (AstExpr* expr = ast_element_cast<AstExpr>(m_lhs))
-			delete expr;
-	}
+    std::unique_ptr<AstExpr> releaseRhs() { return std::move(m_rhs); }
+	void setWrappedRhs(std::unique_ptr<AstExpr>&& expr) { m_rhs = std::move(expr); }
+	AstElement* lhs() { return m_lhsExpr ? m_lhsExpr.get() : m_lhsRef; }
+	
 };

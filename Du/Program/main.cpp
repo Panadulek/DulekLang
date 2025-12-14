@@ -25,6 +25,7 @@
 
 int main(int argc, char** argv)
 {
+
 	AstType type(BasicTypes::F32);
 	DuSettings settings(argc, argv);
 	std::string_view filename = settings.getNextFile();
@@ -38,6 +39,7 @@ int main(int argc, char** argv)
 	gen.generateIr();
 	std::unique_ptr<llvmAsmOutputProcess> m_outputProcess = std::make_unique<llvmAsmOutputProcess>(gen, "main", llvmAsmOutputProcess::TargetPlatform::X86);
 	m_outputProcess->process();
+	AstScope::GlobalApi::clearGlobalScopes();
 	return 0;
 }
 

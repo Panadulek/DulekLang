@@ -140,8 +140,8 @@ public:
 		static bool isTotalType(BasicTypes type);
 		static AstScope* getCurrentGlobalScope();
 		static AstScope* getGlobalScopeForFile(std::string_view filename);
-	private: //function used only for unit tests project
 		static void clearGlobalScopes();
+	private: //function used only for unit tests project
 		friend class AstScopeUnitTests;
 	};
 	~AstScope();

@@ -159,6 +159,7 @@ std::span<std::unique_ptr<AstElement>> AstScope::getElements()
 }
 std::span<std::unique_ptr<AstElement>> AstScope::getStmts()
 {
+    std::cout << "AstScope getStmts count: " << m_stmts.size() << std::endl;
 	return m_stmts;
 }
 AstScope::Global& AstScope::getGlobal()

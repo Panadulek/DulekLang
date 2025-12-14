@@ -804,7 +804,7 @@ namespace yy {
   case 13: // expr: expr "+" expr
 #line 144 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createAddExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createAddExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
 #line 810 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -812,7 +812,7 @@ namespace yy {
   case 14: // expr: expr "-" expr
 #line 148 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createSubExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createSubExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
 #line 818 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -820,7 +820,7 @@ namespace yy {
   case 15: // expr: expr "*" expr
 #line 152 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createMulExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createMulExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
 #line 826 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -828,7 +828,7 @@ namespace yy {
   case 16: // expr: expr "/" expr
 #line 156 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createDivExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createDivExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
 #line 834 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -836,7 +836,7 @@ namespace yy {
   case 17: // expr: expr cmp_op expr
 #line 160 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCmpExpr(yystack_[2].value.as < AstExpr* > (), yystack_[1].value.as < AstExpr::CMP_OPERATION > (), yystack_[0].value.as < AstExpr* > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCmpExpr(yystack_[2].value.as < AstExpr* > (), yystack_[1].value.as < AstExpr::CMP_OPERATION > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
 #line 842 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -860,7 +860,7 @@ namespace yy {
   case 20: // expr: NUMBER_TOKEN
 #line 172 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createUnsignedConst(yystack_[0].value.as < int > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createUnsignedConst(yystack_[0].value.as < int > ()).release();
     }
 #line 866 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -868,7 +868,7 @@ namespace yy {
   case 21: // expr: TRUE_TOKEN
 #line 176 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(true);
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(true).release();
     }
 #line 874 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -876,7 +876,7 @@ namespace yy {
   case 22: // expr: FALSE_TOKEN
 #line 180 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(false);
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(false).release();
     }
 #line 882 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -884,7 +884,7 @@ namespace yy {
   case 23: // expr: CONST_STR
 #line 184 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createStrConst(yystack_[0].value.as < std::string > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createStrConst(yystack_[0].value.as < std::string > ()).release();
     }
 #line 890 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -892,7 +892,7 @@ namespace yy {
   case 24: // expr: ID_TOKEN
 #line 188 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createRef(yystack_[0].value.as < std::string > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createRef(yystack_[0].value.as < std::string > ()).release();
     }
 #line 898 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -900,7 +900,7 @@ namespace yy {
   case 25: // expr: ID_TOKEN "(" expr_list ")"
 #line 192 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun(yystack_[3].value.as < std::string > (), getActualScope(), yystack_[1].value.as < AstArgs* > ());
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun(yystack_[3].value.as < std::string > (), getActualScope(), yystack_[1].value.as < AstArgs* > ()).release();
     }
 #line 906 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -908,7 +908,7 @@ namespace yy {
   case 26: // expr: ID_TOKEN "(" ")"
 #line 196 "parser/parser.y"
     {
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun(yystack_[2].value.as < std::string > (), getActualScope(), nullptr);
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun(yystack_[2].value.as < std::string > (), getActualScope(), nullptr).release();
     }
 #line 914 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
@@ -961,7 +961,7 @@ namespace yy {
 #line 216 "parser/parser.y"
     {
         std::unique_ptr<ArrayDecorator::Array> dims(yystack_[0].value.as < ArrayDecorator::Array* > ()); // RAII
-        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp(yystack_[1].value.as < std::string > (), *dims);
+        yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp(yystack_[1].value.as < std::string > (), *dims).release();
     }
 #line 967 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;

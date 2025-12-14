@@ -99,6 +99,7 @@ public:
         }
 
         llvm::Value* operator()(AstNodes::BinaryExpr& binOp) {
+             std::cout << "BinaryExpr Address: " << &binOp << " Left: " << binOp.left.get() << " Right: " << binOp.right.get() << std::endl;
              llvm::Value* l = visit(binOp.left.get());
              llvm::Value* r = visit(binOp.right.get());
              

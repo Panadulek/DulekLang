@@ -40,42 +40,42 @@ class AstFactory
 
 	struct ExprFactor
 	{
-		AstExpr* createAddExpr(AstElement* left, AstElement* right)
+		std::unique_ptr<AstExpr> createAddExpr(AstElement* left, AstElement* right)
 		{
             AstNodes::BinaryExpr binOp { AstNodes::BinaryOpType::Addition, toExpr(left), toExpr(right) };
-			return new AstExpr(std::move(binOp));
+			return std::make_unique<AstExpr>(std::move(binOp));
 		}
-		AstExpr* createSubExpr(AstElement* left, AstElement* right)
+		std::unique_ptr<AstExpr> createSubExpr(AstElement* left, AstElement* right)
 		{
             AstNodes::BinaryExpr binOp { AstNodes::BinaryOpType::Subtraction, toExpr(left), toExpr(right) };
-			return new AstExpr(std::move(binOp));
+			return std::make_unique<AstExpr>(std::move(binOp));
 		}
-		AstExpr* createMulExpr(AstElement* left, AstElement* right)
+		std::unique_ptr<AstExpr> createMulExpr(AstElement* left, AstElement* right)
 		{
             AstNodes::BinaryExpr binOp { AstNodes::BinaryOpType::Multiplication, toExpr(left), toExpr(right) };
-			return new AstExpr(std::move(binOp));
+			return std::make_unique<AstExpr>(std::move(binOp));
 		}
-		AstExpr* createDivExpr(AstElement* left, AstElement* right)
+		std::unique_ptr<AstExpr> createDivExpr(AstElement* left, AstElement* right)
 		{
             AstNodes::BinaryExpr binOp { AstNodes::BinaryOpType::Division, toExpr(left), toExpr(right) };
-			return new AstExpr(std::move(binOp));
+			return std::make_unique<AstExpr>(std::move(binOp));
 		}
-		AstExpr* createUnsignedConst(uint64_t val)
+		std::unique_ptr<AstExpr> createUnsignedConst(uint64_t val)
 		{
             AstNodes::LiteralExpr lit { val };
-			return new AstExpr(std::move(lit));
+			return std::make_unique<AstExpr>(std::move(lit));
 		}
-		AstExpr* createStrConst(std::string_view val)
+		std::unique_ptr<AstExpr> createStrConst(std::string_view val)
 		{
             AstNodes::LiteralExpr lit { std::string(val) };
-			return new AstExpr(std::move(lit));
+			return std::make_unique<AstExpr>(std::move(lit));
 		}
-		AstExpr* createBoolConst(bool val)
+		std::unique_ptr<AstExpr> createBoolConst(bool val)
 		{
             AstNodes::LiteralExpr lit { val };
-			return new AstExpr(std::move(lit));
+			return std::make_unique<AstExpr>(std::move(lit));
 		}
-		AstExpr* createRef(std::string_view name)
+		std::unique_ptr<AstExpr> createRef(std::string_view name)
 		{
 			if (!name.data())
 				return nullptr;
@@ -88,17 +88,17 @@ class AstFactory
 			}
             
             AstNodes::VariableRefExpr varRef { std::string(name), element };
-			AstExpr* expr = new AstExpr(std::move(varRef));
+			auto expr = std::make_unique<AstExpr>(std::move(varRef));
 			expr->setValueCategory(ValueCategory::LValue);
 			return expr;
 		}
 
-		AstExpr* createCast(AstElement* exprToCast, CastOp op)
+		std::unique_ptr<AstExpr> createCast(AstElement* exprToCast, CastOp op)
 		{
             AstNodes::CastExpr castExpr { op, toExpr(exprToCast) };
-			return new AstExpr(std::move(castExpr));
+			return std::make_unique<AstExpr>(std::move(castExpr));
 		}
-		AstExpr* createCmpExpr(AstElement* left, AstExpr::CMP_OPERATION op, AstElement* right)
+		std::unique_ptr<AstExpr> createCmpExpr(AstElement* left, AstExpr::CMP_OPERATION op, AstElement* right)
 		{
             AstNodes::CmpOpType newOp;
             switch(op)
@@ -112,13 +112,13 @@ class AstFactory
             }
 
             AstNodes::CmpExpr cmp { newOp, toExpr(left), toExpr(right) };
-			return new AstExpr(std::move(cmp));
+			return std::make_unique<AstExpr>(std::move(cmp));
 		}
 
-		AstExpr* createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
+		std::unique_ptr<AstExpr> createCallFun(std::string_view funName, AstScope* beginContainer,  AstList* args)
 		{
 			AstElement* element = beginContainer->getElement(funName);
-			AstExpr* res = nullptr;
+			std::unique_ptr<AstExpr> res = nullptr;
 			if (!element)
 			{
 				Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, funName);
@@ -126,7 +126,7 @@ class AstFactory
 			if (AstScope* scope = ast_element_cast<AstScope>(element))
 			{
 				res = scope->accept(overloaded{
-						[&](ScopeDecorator::Function& func) -> AstExpr*
+						[&](ScopeDecorator::Function& func) -> std::unique_ptr<AstExpr>
 						{
 							 std::vector<std::unique_ptr<AstExpr>> funcArgs;
 							if (auto* astArgs = dynamic_cast<AstArgs*>(args)) {
@@ -136,9 +136,9 @@ class AstFactory
 							}
 							if (args) delete args;
 							AstNodes::FunctionCallExpr call { std::string(funName), std::move(funcArgs) };
-							return new AstExpr(std::move(call));
+							return std::make_unique<AstExpr>(std::move(call));
 						},
-						[&](auto&&) -> AstExpr*
+						[&](auto&&) -> std::unique_ptr<AstExpr>
 						{
 							return nullptr;
 						}
@@ -148,7 +148,7 @@ class AstFactory
             return res;
 		}
 
-		AstExpr* createArrayIndexingOp(std::string_view varName, ArrayDecorator::Array& dims)
+		std::unique_ptr<AstExpr> createArrayIndexingOp(std::string_view varName, ArrayDecorator::Array& dims)
 		{
 			AstScope* scope = getActualScope();
 			AstVariableDecl* element = ast_element_cast<AstVariableDecl>(scope->getElement(varName));
@@ -168,7 +168,7 @@ class AstFactory
 
                 AstNodes::ArrayIndexingExpr arrIndex { std::move(baseExpr), std::move(indices) };
                 
-				AstExpr* expr = new AstExpr(std::move(arrIndex));
+				auto expr = std::make_unique<AstExpr>(std::move(arrIndex));
                 expr->setValueCategory(ValueCategory::LValue);
                 return expr;
 			}
@@ -217,11 +217,13 @@ class AstFactory
 				AstElement* scopeMember = currentScope->getElement(lhs);
 				if (!scopeMember)
 				{
-					Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::DU001, lhs);
+					Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU001, lhs);
 				}
 				else if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
 				{
-					return std::make_unique<AstStatement>(scopeMember, expr, AstStatement::STMT_TYPE::ASSIGN);
+					// scopeMember is owned by Scope, so pass as raw pointer (reference)
+					// expr is owned by Statement, so pass as unique_ptr
+					return std::make_unique<AstStatement>(scopeMember, std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::ASSIGN);
 				}
 			}
 			return nullptr;
@@ -229,10 +231,19 @@ class AstFactory
 		
 		std::unique_ptr<AstElement> createAssigmentVariable(AstElement* expr, AstElement* rhs)
 		{
-
-			if (AstExpr* _expr = ast_element_cast<AstExpr>(rhs))
+			AstExpr* rhsExpr = ast_element_cast<AstExpr>(rhs);
+			if (rhsExpr)
 			{	
-				return std::make_unique<AstStatement>(expr, _expr, AstStatement::STMT_TYPE::ASSIGN);
+				if (AstExpr* lhsExpr = ast_element_cast<AstExpr>(expr))
+				{
+					// Both are expressions (e.g. arr[i] = x), Statement owns both
+					return std::make_unique<AstStatement>(std::unique_ptr<AstExpr>(lhsExpr), std::unique_ptr<AstExpr>(rhsExpr), AstStatement::STMT_TYPE::ASSIGN);
+				}
+				else
+				{
+					// LHS is not an expression (unlikely for this overload, but safe fallback), pass as reference
+					return std::make_unique<AstStatement>(expr, std::unique_ptr<AstExpr>(rhsExpr), AstStatement::STMT_TYPE::ASSIGN);
+				}
 			}
 
 			return nullptr;
@@ -244,7 +255,8 @@ class AstFactory
 			{
 				if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
 				{
-					return std::make_unique<AstStatement>(nullptr, expr, AstStatement::STMT_TYPE::RHS_STMT);
+					// Pass nullptr as LHS (no LHS), expr as RHS (owned)
+					return std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::RHS_STMT);
 				}
 			}
 			return nullptr;
@@ -256,7 +268,7 @@ class AstFactory
 			{
 				if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
 				{
-					return std::make_unique<AstStatement>(nullptr, expr, AstStatement::STMT_TYPE::RET_STMT);
+					return std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::RET_STMT);
 				}
 			}
 			return nullptr;
@@ -268,7 +280,10 @@ class AstFactory
 			{
 				if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(rhs))
 				{
-					return std::make_unique<AstStatement>(decl, expr);
+					// decl is owned by Scope, pass as raw pointer
+					// expr is owned by Statement, pass as unique_ptr (can be null)
+					std::unique_ptr<AstExpr> exprPtr(expr);
+					return std::make_unique<AstStatement>(decl, std::move(exprPtr));
 				}
 			}
 			return nullptr;

@@ -142,23 +142,23 @@ stmt_list:
 expr:
       expr PLUS expr
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createAddExpr($1, $3);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createAddExpr($1, $3).release();
     }
     | expr MINUS expr
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createSubExpr($1, $3);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createSubExpr($1, $3).release();
     }
     | expr MULT expr
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createMulExpr($1, $3);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createMulExpr($1, $3).release();
     }
     | expr DIV expr
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createDivExpr($1, $3);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createDivExpr($1, $3).release();
     }
     | expr cmp_op expr %prec EQ
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCmpExpr($1, $2, $3);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCmpExpr($1, $2, $3).release();
     }
     | MINUS expr %prec UMINUS
     {
@@ -170,31 +170,31 @@ expr:
     }
     | NUMBER_TOKEN
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createUnsignedConst($1);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createUnsignedConst($1).release();
     }
     | TRUE_TOKEN
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(true);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(true).release();
     }
     | FALSE_TOKEN
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(false);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(false).release();
     }
     | CONST_STR
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createStrConst($1);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createStrConst($1).release();
     }
     | ID_TOKEN
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createRef($1);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createRef($1).release();
     }
     | ID_TOKEN LPAREN expr_list RPAREN
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1, getActualScope(), $3);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1, getActualScope(), $3).release();
     }
     | ID_TOKEN LPAREN RPAREN
     {
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1, getActualScope(), nullptr);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun($1, getActualScope(), nullptr).release();
     }
     | expr_index_op
     {
@@ -215,7 +215,7 @@ expr_index_op:
     ID_TOKEN dimension_list
     {
         std::unique_ptr<ArrayDecorator::Array> dims($2); // RAII
-        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp($1, *dims);
+        $$ = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp($1, *dims).release();
     }
 ;
 
