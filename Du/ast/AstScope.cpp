@@ -151,6 +151,7 @@ AstElement* AstScope::addElement(std::unique_ptr<AstElement>&& element)
 			}
 		}
 	}
+	return nullptr;
 }
 
 std::span<std::unique_ptr<AstElement>> AstScope::getElements()

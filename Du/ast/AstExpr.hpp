@@ -27,7 +27,8 @@ namespace AstNodes {
         LessThan,
         GreaterOrEq,
         LessOrEq,
-        NotEqual
+        NotEqual,
+        NO_OP
     };
 
     enum class UnaryOpType : uint8_t {
@@ -91,6 +92,7 @@ public:
         GREATER_OR_EQ,
         LESS_OR_EQ,
         NOT_EQUAL,
+        NO_OP
     };
     
     // Main variant definition

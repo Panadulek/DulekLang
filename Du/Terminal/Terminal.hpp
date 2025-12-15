@@ -52,6 +52,7 @@ protected:
 		case MessageType::WARNING:
 			return "Warning";
 		case MessageType::LOG:
+		default:
 			return "Log";
 		}
 	}

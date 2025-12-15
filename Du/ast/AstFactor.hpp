@@ -100,7 +100,7 @@ class AstFactory
 		}
 		std::unique_ptr<AstExpr> createCmpExpr(AstElement* left, AstExpr::CMP_OPERATION op, AstElement* right)
 		{
-            AstNodes::CmpOpType newOp;
+            AstNodes::CmpOpType newOp = AstNodes::CmpOpType::NO_OP;
             switch(op)
             {
                 case AstExpr::CMP_OPERATION::EQUAL: newOp = AstNodes::CmpOpType::Equal; break;

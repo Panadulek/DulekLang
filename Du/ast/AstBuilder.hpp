@@ -27,6 +27,7 @@ public:
 	
 			}
 		}
+		return nullptr;
 	}
 	AstScope* getActualScope()
 	{

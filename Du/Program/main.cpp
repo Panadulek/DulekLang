@@ -20,13 +20,11 @@
 #include "../ast/AstType.hpp"
 #include "../semantic_analyzer/semantic_analyzer.h"
 
-#define NOMINMAX
 
 
 int main(int argc, char** argv)
 {
 
-	AstType type(BasicTypes::F32);
 	DuSettings settings(argc, argv);
 	std::string_view filename = settings.getNextFile();
 	Parser parser(filename, settings.is_yyDebug());
