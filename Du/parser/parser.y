@@ -133,10 +133,10 @@ stmt:
     {
         $$ = nullptr;
     }
-    | IF_TOKEN LPAREN expr RPAREN
+    | IF_TOKEN LPAREN expr RPAREN 
     {
         AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt($3);
-	} LBRACE stmt_list RBRACE
+	}  LBRACE stmt_list RBRACE
     {
         AstBuildSystem::Instance().getBuilder().exitScope();
 		$$ = nullptr;

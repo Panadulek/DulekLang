@@ -14,6 +14,6 @@ class Parser final
 public:
 	Parser() = delete;
 	Parser(std::string_view filename, bool debug = false);
-	void parse();
+	bool parse();
 	~Parser();
 };

@@ -65,10 +65,10 @@ Parser::Parser(std::string_view filename, bool debug)
 {
 }
 
-void Parser::parse()
+bool Parser::parse()
 {
     if (m_currentFileName.empty())
-        return;
+        return false;
 
     const bool isOpenFile = m_pimpl->openFile(m_currentFileName);
 
@@ -78,8 +78,9 @@ void Parser::parse()
         AstBuildSystem::Instance().getBuilder().beginScope(AstScope::GlobalApi::getGlobalScopeForFile(m_currentFileName));
 
         // Przekazujemy flagê debug do metody impl
-        m_pimpl->parse(m_debugParser);
+        return m_pimpl->parse(m_debugParser) == Parser::Impl::ParserRetCodes::OK;
     }
+    return false;
 }
 
 Parser::~Parser() = default;

@@ -28,8 +28,7 @@ int main(int argc, char** argv)
 	DuSettings settings(argc, argv);
 	std::string_view filename = settings.getNextFile();
 	Parser parser(filename, settings.is_yyDebug());
-	parser.parse();
-	if (Terminal::Output()->errorHappend())
+	if (!parser.parse() || Terminal::Output()->errorHappend())
 		return -1;
 	SemanticAnalyzer analyzer(filename);
 	analyzer.analyzie();
