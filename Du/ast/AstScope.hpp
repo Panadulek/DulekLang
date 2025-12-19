@@ -105,9 +105,9 @@ public:
 		if (res)
 			return res;
 
-		if (getParent())
+		if (AstElement* _parent = getParent())
 		{
-			AstScope* parentScope = ast_element_cast<AstScope>(getParent());
+			AstScope* parentScope = ast_element_cast<AstScope>(_parent);
 			return parentScope->getElement(id);
 		}
 		return nullptr;

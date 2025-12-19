@@ -10,6 +10,7 @@
 #include "../ast/AstExpr.hpp"
 #include "../ast/AstElement.hpp"
 #include "../ast/AstType.hpp"
+#include "../ast/AstControlBlock.h"
 #include "../ast/CastGraph.hpp"
 #include "../ast/AstBuildSystem.hpp"
 #include "../ast/VariableDecorator.hpp" 
@@ -338,7 +339,43 @@ private:
 
                 // 2. Check assignments / declarations
                 std::optional<BasicTypes> optType = std::nullopt;
-                if (stmt->getStmtType() == ::AstStatement::STMT_TYPE::RET_STMT)
+
+                if (stmt->getStmtType() == AstStatement::STMT_TYPE::CONDITION_BLOCK)
+                {
+                    if (stmt->isControlBlockStmt())
+                    {
+                        auto& controlBlock = stmt->getControlBlock();
+                        if (controlBlock)
+                        {
+                            auto conditionExpr = stmt->rhs();
+                            TypeCheckVisitor condChecker(m_currentScope, conditionExpr);
+                            conditionExpr->accept(condChecker);
+
+                            if (conditionExpr && conditionExpr->getType())
+                            {
+                                BasicTypes condType = conditionExpr->getType()->getType();
+                                if (condType != BasicTypes::BOOL)
+                                {
+                                    CastOp op = CastGraph::getCastOp(condType, BasicTypes::BOOL);
+                                    if (op != CastOp::NoOp)
+                                    {
+                                        auto cast = AstBuildSystem::Instance().getFactory().exprFactor().createCast(stmt->releaseRhs().release(), op);
+                                        cast->setType(std::make_unique<AstType>(BasicTypes::BOOL));
+                                        stmt->setWrappedRhs(std::move(cast));
+                                    }
+                                    else
+                                    {
+                                        Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU003, "Condition must be boolean convertible");
+                                    }
+                                }
+                            }
+
+                            analyzeScope(controlBlock->getBranchScope().get());
+                            analyzeScope(controlBlock->getOtherBranch().get());
+                        }
+                    }
+                }
+                else if (stmt->getStmtType() == ::AstStatement::STMT_TYPE::RET_STMT)
                 {
                     optType = resolveType(m_currentScope);
                 }

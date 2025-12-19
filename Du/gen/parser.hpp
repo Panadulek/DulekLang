@@ -479,28 +479,32 @@ namespace yy {
     ID_TOKEN = 260,                // ID_TOKEN
     CONST_STR = 261,               // CONST_STR
     NUMBER_TOKEN = 262,            // NUMBER_TOKEN
-    TRUE_TOKEN = 263,              // TRUE_TOKEN
-    FALSE_TOKEN = 264,             // FALSE_TOKEN
-    EQ = 265,                      // EQ
-    NE = 266,                      // NE
-    LT = 267,                      // LT
-    GT = 268,                      // GT
-    LE = 269,                      // LE
-    GE = 270,                      // GE
-    PLUS = 271,                    // "+"
-    MINUS = 272,                   // "-"
-    MULT = 273,                    // "*"
-    DIV = 274,                     // "/"
-    ASSIGN = 275,                  // "="
-    SEMICOLON = 276,               // ";"
-    COMMA = 277,                   // ","
-    LPAREN = 278,                  // "("
-    RPAREN = 279,                  // ")"
-    LBRACE = 280,                  // "{"
-    RBRACE = 281,                  // "}"
-    LBRACKET = 282,                // "["
-    RBRACKET = 283,                // "]"
-    UMINUS = 284                   // UMINUS
+    IF_TOKEN = 263,                // IF_TOKEN
+    ELSE_TOKEN = 264,              // ELSE_TOKEN
+    WHILE_TOKEN = 265,             // WHILE_TOKEN
+    FOR_TOKEN = 266,               // FOR_TOKEN
+    TRUE_TOKEN = 267,              // TRUE_TOKEN
+    FALSE_TOKEN = 268,             // FALSE_TOKEN
+    EQ = 269,                      // EQ
+    NE = 270,                      // NE
+    LT = 271,                      // LT
+    GT = 272,                      // GT
+    LE = 273,                      // LE
+    GE = 274,                      // GE
+    PLUS = 275,                    // "+"
+    MINUS = 276,                   // "-"
+    MULT = 277,                    // "*"
+    DIV = 278,                     // "/"
+    ASSIGN = 279,                  // "="
+    SEMICOLON = 280,               // ";"
+    COMMA = 281,                   // ","
+    LPAREN = 282,                  // "("
+    RPAREN = 283,                  // ")"
+    LBRACE = 284,                  // "{"
+    RBRACE = 285,                  // "}"
+    LBRACKET = 286,                // "["
+    RBRACKET = 287,                // "]"
+    UMINUS = 288                   // UMINUS
       };
       /// Backward compatibility alias (Bison 3.6).
       typedef token_kind_type yytokentype;
@@ -517,7 +521,7 @@ namespace yy {
     {
       enum symbol_kind_type
       {
-        YYNTOKENS = 30, ///< Number of tokens.
+        YYNTOKENS = 34, ///< Number of tokens.
         S_YYEMPTY = -2,
         S_YYEOF = 0,                             // "end of file"
         S_YYerror = 1,                           // error
@@ -527,41 +531,46 @@ namespace yy {
         S_ID_TOKEN = 5,                          // ID_TOKEN
         S_CONST_STR = 6,                         // CONST_STR
         S_NUMBER_TOKEN = 7,                      // NUMBER_TOKEN
-        S_TRUE_TOKEN = 8,                        // TRUE_TOKEN
-        S_FALSE_TOKEN = 9,                       // FALSE_TOKEN
-        S_EQ = 10,                               // EQ
-        S_NE = 11,                               // NE
-        S_LT = 12,                               // LT
-        S_GT = 13,                               // GT
-        S_LE = 14,                               // LE
-        S_GE = 15,                               // GE
-        S_PLUS = 16,                             // "+"
-        S_MINUS = 17,                            // "-"
-        S_MULT = 18,                             // "*"
-        S_DIV = 19,                              // "/"
-        S_ASSIGN = 20,                           // "="
-        S_SEMICOLON = 21,                        // ";"
-        S_COMMA = 22,                            // ","
-        S_LPAREN = 23,                           // "("
-        S_RPAREN = 24,                           // ")"
-        S_LBRACE = 25,                           // "{"
-        S_RBRACE = 26,                           // "}"
-        S_LBRACKET = 27,                         // "["
-        S_RBRACKET = 28,                         // "]"
-        S_UMINUS = 29,                           // UMINUS
-        S_YYACCEPT = 30,                         // $accept
-        S_program = 31,                          // program
-        S_stmt = 32,                             // stmt
-        S_stmt_list = 33,                        // stmt_list
-        S_expr = 34,                             // expr
-        S_cmp_op = 35,                           // cmp_op
-        S_expr_index_op = 36,                    // expr_index_op
-        S_expr_list = 37,                        // expr_list
-        S_dimension_list = 38,                   // dimension_list
-        S_decl_expr = 39,                        // decl_expr
-        S_decl_expr_list = 40,                   // decl_expr_list
-        S_decl_fun_header = 41,                  // decl_fun_header
-        S_decl_fun = 42                          // decl_fun
+        S_IF_TOKEN = 8,                          // IF_TOKEN
+        S_ELSE_TOKEN = 9,                        // ELSE_TOKEN
+        S_WHILE_TOKEN = 10,                      // WHILE_TOKEN
+        S_FOR_TOKEN = 11,                        // FOR_TOKEN
+        S_TRUE_TOKEN = 12,                       // TRUE_TOKEN
+        S_FALSE_TOKEN = 13,                      // FALSE_TOKEN
+        S_EQ = 14,                               // EQ
+        S_NE = 15,                               // NE
+        S_LT = 16,                               // LT
+        S_GT = 17,                               // GT
+        S_LE = 18,                               // LE
+        S_GE = 19,                               // GE
+        S_PLUS = 20,                             // "+"
+        S_MINUS = 21,                            // "-"
+        S_MULT = 22,                             // "*"
+        S_DIV = 23,                              // "/"
+        S_ASSIGN = 24,                           // "="
+        S_SEMICOLON = 25,                        // ";"
+        S_COMMA = 26,                            // ","
+        S_LPAREN = 27,                           // "("
+        S_RPAREN = 28,                           // ")"
+        S_LBRACE = 29,                           // "{"
+        S_RBRACE = 30,                           // "}"
+        S_LBRACKET = 31,                         // "["
+        S_RBRACKET = 32,                         // "]"
+        S_UMINUS = 33,                           // UMINUS
+        S_YYACCEPT = 34,                         // $accept
+        S_program = 35,                          // program
+        S_stmt = 36,                             // stmt
+        S_37_1 = 37,                             // $@1
+        S_stmt_list = 38,                        // stmt_list
+        S_expr = 39,                             // expr
+        S_cmp_op = 40,                           // cmp_op
+        S_expr_index_op = 41,                    // expr_index_op
+        S_expr_list = 42,                        // expr_list
+        S_dimension_list = 43,                   // dimension_list
+        S_decl_expr = 44,                        // decl_expr
+        S_decl_expr_list = 45,                   // decl_expr_list
+        S_decl_fun_header = 46,                  // decl_fun_header
+        S_decl_fun = 47                          // decl_fun
       };
     };
 
@@ -1115,6 +1124,66 @@ switch (yykind)
       make_NUMBER_TOKEN (const int& v, const location_type& l)
       {
         return symbol_type (token::NUMBER_TOKEN, v, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_IF_TOKEN (location_type l)
+      {
+        return symbol_type (token::IF_TOKEN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_IF_TOKEN (const location_type& l)
+      {
+        return symbol_type (token::IF_TOKEN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_ELSE_TOKEN (location_type l)
+      {
+        return symbol_type (token::ELSE_TOKEN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_ELSE_TOKEN (const location_type& l)
+      {
+        return symbol_type (token::ELSE_TOKEN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_WHILE_TOKEN (location_type l)
+      {
+        return symbol_type (token::WHILE_TOKEN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_WHILE_TOKEN (const location_type& l)
+      {
+        return symbol_type (token::WHILE_TOKEN, l);
+      }
+#endif
+#if 201103L <= YY_CPLUSPLUS
+      static
+      symbol_type
+      make_FOR_TOKEN (location_type l)
+      {
+        return symbol_type (token::FOR_TOKEN, std::move (l));
+      }
+#else
+      static
+      symbol_type
+      make_FOR_TOKEN (const location_type& l)
+      {
+        return symbol_type (token::FOR_TOKEN, l);
       }
 #endif
 #if 201103L <= YY_CPLUSPLUS
@@ -1751,8 +1820,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 263,     ///< Last index in yytable_.
-      yynnts_ = 13,  ///< Number of nonterminal symbols.
+      yylast_ = 316,     ///< Last index in yytable_.
+      yynnts_ = 14,  ///< Number of nonterminal symbols.
       yyfinal_ = 2 ///< Termination state number.
     };
 
@@ -1798,10 +1867,10 @@ switch (yykind)
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    26,    27,    28,    29
+      25,    26,    27,    28,    29,    30,    31,    32,    33
     };
     // Last valid token kind.
-    const int code_max = 284;
+    const int code_max = 288;
 
     if (t <= 0)
       return symbol_kind::S_YYEOF;
@@ -1991,7 +2060,7 @@ switch (yykind)
 
 
 } // yy
-#line 1995 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 2064 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 
 
 

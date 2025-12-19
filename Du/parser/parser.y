@@ -42,6 +42,7 @@
 %token ARROW_TOKEN RET_STMT
 %token <std::string> ID_TOKEN CONST_STR
 %token <int> NUMBER_TOKEN
+%token IF_TOKEN ELSE_TOKEN WHILE_TOKEN FOR_TOKEN
 %token TRUE_TOKEN FALSE_TOKEN
 %token EQ NE LT GT LE GE
 
@@ -131,6 +132,14 @@ stmt:
     | decl_fun
     {
         $$ = nullptr;
+    }
+    | IF_TOKEN LPAREN expr RPAREN
+    {
+        AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt($3);
+	} LBRACE stmt_list RBRACE
+    {
+        AstBuildSystem::Instance().getBuilder().exitScope();
+		$$ = nullptr;
     }
 ;
 

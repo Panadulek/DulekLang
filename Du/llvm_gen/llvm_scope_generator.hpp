@@ -50,7 +50,19 @@ class LlvmScopeGenerator
 				for (auto it : args)
 				{
 					llvm::Value* val = argsIt++;
-					getLlvmCache<>().insertElement(val, it);
+					if (AstVariableDecl* var = ast_element_cast<AstVariableDecl>(it))
+					{
+						val->setName(std::string(var->getName()) + "_arg");
+						AstType* type = var->getVarType();
+						llvm::Type* llvmType = LlvmTypeGenerator::convertAstToLlvmType(type->getType());
+						llvm::AllocaInst* alloca = b.CreateAlloca(llvmType, nullptr, var->getName());
+						b.CreateStore(val, alloca);
+						getLlvmCache<>().insertElement(alloca, it, llvmType);
+					}
+					else
+					{
+						getLlvmCache<>().insertElement(val, it);
+					}
 				}
 			}
 			auto elements = scope->getStmts();

@@ -26,4 +26,19 @@ std::unique_ptr<AstScope> AstFactory::ScopeFactor::createFunction(std::string_vi
 	return createFunction(name, AstBuildSystem::Instance().getBuilder().getActualScope(), retType, args);
 }
 
-
+AstElement* AstFactory::StatementFactor::createConditionBlockStmt(AstElement* condExpr)
+{
+	if (condExpr)
+	{
+		if (AstExpr* expr = ast_element_cast<AstExpr>(condExpr))
+		{
+			auto* rawCondBlock = dynamic_cast<AstStatement*>(
+				AstBuildSystem::Instance().getBuilder().addElement(std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::CONDITION_BLOCK, getActualScope()))
+				);
+			assert(rawCondBlock && rawCondBlock->isControlBlockStmt());
+			AstBuildSystem::Instance().getBuilder().beginScope(rawCondBlock->getControlBlock()->getCurrentBranch().get());
+			return rawCondBlock;
+		}
+	}
+	return nullptr;
+}

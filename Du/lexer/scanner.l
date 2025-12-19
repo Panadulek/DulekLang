@@ -37,7 +37,10 @@ static yy::parser::location_type loc;
 "return" { return yy::parser::make_RET_STMT(loc); }
 "true"   { return yy::parser::make_TRUE_TOKEN(loc); }
 "false"  { return yy::parser::make_FALSE_TOKEN(loc); }
-
+"if"     { return yy::parser::make_IF_TOKEN(loc); }
+"else"   { return yy::parser::make_ELSE_TOKEN(loc); }
+"while"  { return yy::parser::make_WHILE_TOKEN(loc); }
+"for"    { return yy::parser::make_FOR_TOKEN(loc); }
 "==" { return yy::parser::make_EQ(loc); }
 "!=" { return yy::parser::make_NE(loc); }
 "<=" { return yy::parser::make_LE(loc); }

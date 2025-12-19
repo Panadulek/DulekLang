@@ -27,6 +27,7 @@ public:
 		REFERENCE,
 		AST_LIST,
 		CALL_FUN,
+		CONTROL_BLOCK,
 	};
 private:
 	std::string m_name;
@@ -44,6 +45,7 @@ public:
 	virtual std::string_view getName() const ;
 	const ElementType getAstType();
 	AstElement* getParent() const { return m_parent; }
+	void setParent(AstElement* parent) { m_parent = parent; }
 	const bool nameIsKeyword();
 	void setValueCategory(ValueCategory category) { m_value_category = category; }
 	ValueCategory getValueCategory() const { return m_value_category; }

@@ -223,7 +223,7 @@ class AstFactory
 				{
 					// scopeMember is owned by Scope, so pass as raw pointer (reference)
 					// expr is owned by Statement, so pass as unique_ptr
-					return std::make_unique<AstStatement>(scopeMember, std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::ASSIGN);
+					return std::make_unique<AstStatement>(scopeMember, std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::ASSIGN, currentScope);
 				}
 			}
 			return nullptr;
@@ -237,12 +237,12 @@ class AstFactory
 				if (AstExpr* lhsExpr = ast_element_cast<AstExpr>(expr))
 				{
 					// Both are expressions (e.g. arr[i] = x), Statement owns both
-					return std::make_unique<AstStatement>(std::unique_ptr<AstExpr>(lhsExpr), std::unique_ptr<AstExpr>(rhsExpr), AstStatement::STMT_TYPE::ASSIGN);
+					return std::make_unique<AstStatement>(std::unique_ptr<AstExpr>(lhsExpr), std::unique_ptr<AstExpr>(rhsExpr), AstStatement::STMT_TYPE::ASSIGN, getActualScope());
 				}
 				else
 				{
 					// LHS is not an expression (unlikely for this overload, but safe fallback), pass as reference
-					return std::make_unique<AstStatement>(expr, std::unique_ptr<AstExpr>(rhsExpr), AstStatement::STMT_TYPE::ASSIGN);
+					return std::make_unique<AstStatement>(expr, std::unique_ptr<AstExpr>(rhsExpr), AstStatement::STMT_TYPE::ASSIGN, getActualScope());
 				}
 			}
 
@@ -256,7 +256,7 @@ class AstFactory
 				if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
 				{
 					// Pass nullptr as LHS (no LHS), expr as RHS (owned)
-					return std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::RHS_STMT);
+					return std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::RHS_STMT, getActualScope());
 				}
 			}
 			return nullptr;
@@ -268,7 +268,7 @@ class AstFactory
 			{
 				if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
 				{
-					return std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::RET_STMT);
+					return std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::RET_STMT, getActualScope());
 				}
 			}
 			return nullptr;
@@ -283,11 +283,14 @@ class AstFactory
 					// decl is owned by Scope, pass as raw pointer
 					// expr is owned by Statement, pass as unique_ptr (can be null)
 					std::unique_ptr<AstExpr> exprPtr(expr);
-					return std::make_unique<AstStatement>(decl, std::move(exprPtr));
+					return std::make_unique<AstStatement>(decl, std::move(exprPtr), getActualScope());
 				}
 			}
 			return nullptr;
 		}
+
+		AstElement* createConditionBlockStmt(AstElement* condExpr);
+
 	};
 
 	std::unique_ptr<ScopeFactor> m_scopeFactor;

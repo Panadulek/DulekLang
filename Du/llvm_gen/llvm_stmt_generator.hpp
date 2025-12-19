@@ -16,6 +16,7 @@
 #include "llvm_cache.hpp"
 #include "../ast/CastGraph.hpp"
 #include "../ast/AstVisitor.hpp"
+#include "../ast/AstControlBlock.h"
 #include <iostream>
 
 class llvmStmtGenerator
@@ -25,7 +26,7 @@ public:
 	{
 		val->dump();
 		return val;
-	} 
+	}
 	static llvm::Value* _getAllocInst(std::string_view variableName, llvm::BasicBlock::iterator begin, llvm::BasicBlock::iterator end)
 	{
 		for (auto it = begin; it != end; it++)
@@ -60,296 +61,316 @@ public:
 		return value;
 	}
 
-    static llvm::Value* createImplicitCast(llvm::Value* val, llvm::Type* destType, llvm::IRBuilder<>& b) {
-        if (!val || !destType || val->getType() == destType) return val;
+	static llvm::Value* createImplicitCast(llvm::Value* val, llvm::Type* destType, llvm::IRBuilder<>& b) {
+		if (!val || !destType || val->getType() == destType) return val;
 
-        llvm::Type* srcType = val->getType();
-        
-        if (srcType->isIntegerTy() && destType->isIntegerTy()) {
-            if (srcType->getIntegerBitWidth() > destType->getIntegerBitWidth()) {
-                return b.CreateTrunc(val, destType, "implicit_trunc");
-            } else if (srcType->getIntegerBitWidth() < destType->getIntegerBitWidth()) {
-                return b.CreateSExt(val, destType, "implicit_sext"); 
-            }
-        }
-        
-        if (srcType->isFloatingPointTy() && destType->isFloatingPointTy()) {
-             if (srcType->getTypeID() > destType->getTypeID()) return b.CreateFPTrunc(val, destType);
-             else return b.CreateFPExt(val, destType);
-        }
+		llvm::Type* srcType = val->getType();
 
-        if (srcType->isIntegerTy() && destType->isFloatingPointTy()) return b.CreateSIToFP(val, destType);
-        if (srcType->isFloatingPointTy() && destType->isIntegerTy()) return b.CreateFPToSI(val, destType);
+		if (srcType->isIntegerTy() && destType->isIntegerTy()) {
+			if (srcType->getIntegerBitWidth() > destType->getIntegerBitWidth()) {
+				return b.CreateTrunc(val, destType, "implicit_trunc");
+			}
+			else if (srcType->getIntegerBitWidth() < destType->getIntegerBitWidth()) {
+				return b.CreateSExt(val, destType, "implicit_sext");
+			}
+		}
 
-        return val;
-    }
+		if (srcType->isFloatingPointTy() && destType->isFloatingPointTy()) {
+			if (srcType->getTypeID() > destType->getTypeID()) return b.CreateFPTrunc(val, destType);
+			else return b.CreateFPExt(val, destType);
+		}
 
-    struct LlvmExprVisitor {
-        llvm::IRBuilder<>& b;
-        AstExpr* currentExpr;
-        AstType* expectedType; 
+		if (srcType->isIntegerTy() && destType->isFloatingPointTy()) return b.CreateSIToFP(val, destType);
+		if (srcType->isFloatingPointTy() && destType->isIntegerTy()) return b.CreateFPToSI(val, destType);
 
-        LlvmExprVisitor(llvm::IRBuilder<>& builder, AstExpr* expr, AstType* expected) 
-            : b(builder), currentExpr(expr), expectedType(expected) {}
+		return val;
+	}
 
-        llvm::Value* visit(AstExpr* expr) {
-            if(!expr) return nullptr;
-            LlvmExprVisitor childVisitor(b, expr, nullptr); 
-            return expr->accept(childVisitor);
-        }
+	struct LlvmExprVisitor {
+		llvm::IRBuilder<>& b;
+		AstExpr* currentExpr;
+		AstType* expectedType;
 
-        llvm::Value* operator()(AstNodes::BinaryExpr& binOp) {
-             std::cout << "BinaryExpr Address: " << &binOp << " Left: " << binOp.left.get() << " Right: " << binOp.right.get() << std::endl;
-             llvm::Value* l = visit(binOp.left.get());
-             llvm::Value* r = visit(binOp.right.get());
-             
-             l = readLValueFromMemory(binOp.left.get(), l, b);
-             r = readLValueFromMemory(binOp.right.get(), r, b);
-             
-             if(l->getType() != r->getType()) {
-                 if(l->getType()->isIntegerTy() && r->getType()->isIntegerTy()) {
-                     if(l->getType()->getIntegerBitWidth() < r->getType()->getIntegerBitWidth())
-                         l = createImplicitCast(l, r->getType(), b);
-                     else
-                         r = createImplicitCast(r, l->getType(), b);
-                 }
-             }
+		LlvmExprVisitor(llvm::IRBuilder<>& builder, AstExpr* expr, AstType* expected)
+			: b(builder), currentExpr(expr), expectedType(expected) {
+		}
 
-             switch(binOp.op) {
-                 case AstNodes::BinaryOpType::Addition: return b.CreateAdd(l, r, "add");
-                 case AstNodes::BinaryOpType::Subtraction: return b.CreateSub(l, r, "sub");
-                 case AstNodes::BinaryOpType::Multiplication: return b.CreateMul(l, r, "mul");
-                 case AstNodes::BinaryOpType::Division: return b.CreateSDiv(l, r, "div");
-             }
-             return nullptr;
-        }
+		llvm::Value* visit(AstExpr* expr) {
+			if (!expr) return nullptr;
+			LlvmExprVisitor childVisitor(b, expr, nullptr);
+			return expr->accept(childVisitor);
+		}
 
-        llvm::Value* operator()(AstNodes::CmpExpr& cmpOp) {
-             llvm::Value* l = visit(cmpOp.left.get());
-             llvm::Value* r = visit(cmpOp.right.get());
-             l = readLValueFromMemory(cmpOp.left.get(), l, b);
-             r = readLValueFromMemory(cmpOp.right.get(), r, b);
+		llvm::Value* operator()(AstNodes::BinaryExpr& binOp) {
+			std::cout << "BinaryExpr Address: " << &binOp << " Left: " << binOp.left.get() << " Right: " << binOp.right.get() << std::endl;
+			llvm::Value* l = visit(binOp.left.get());
+			llvm::Value* r = visit(binOp.right.get());
 
-             AstType* type = cmpOp.left->getType(); 
-             if(!type) type = cmpOp.right->getType();
-             
-             bool isFloat = (l->getType()->isFloatingPointTy());
-             bool isUnsigned = type ? type->isUnsigned() : false;
+			l = readLValueFromMemory(binOp.left.get(), l, b);
+			r = readLValueFromMemory(binOp.right.get(), r, b);
 
-             switch(cmpOp.op) {
-                 case AstNodes::CmpOpType::Equal: return isFloat ? b.CreateFCmpOEQ(l, r) : b.CreateICmpEQ(l, r);
-                 case AstNodes::CmpOpType::NotEqual: return isFloat ? b.CreateFCmpONE(l, r) : b.CreateICmpNE(l, r);
-                 case AstNodes::CmpOpType::GreaterThan: return isFloat ? b.CreateFCmpOGT(l, r) : (isUnsigned ? b.CreateICmpUGT(l, r) : b.CreateICmpSGT(l, r));
-                 case AstNodes::CmpOpType::GreaterOrEq: return isFloat ? b.CreateFCmpOGE(l, r) : (isUnsigned ? b.CreateICmpUGE(l, r) : b.CreateICmpSGE(l, r));
-                 case AstNodes::CmpOpType::LessThan: return isFloat ? b.CreateFCmpOLT(l, r) : (isUnsigned ? b.CreateICmpULT(l, r) : b.CreateICmpSLT(l, r));
-                 case AstNodes::CmpOpType::LessOrEq: return isFloat ? b.CreateFCmpOLE(l, r) : (isUnsigned ? b.CreateICmpULE(l, r) : b.CreateICmpSLE(l, r));
-             }
-             return nullptr;
-        }
+			if (l->getType() != r->getType()) {
+				if (l->getType()->isIntegerTy() && r->getType()->isIntegerTy()) {
+					if (l->getType()->getIntegerBitWidth() < r->getType()->getIntegerBitWidth())
+						l = createImplicitCast(l, r->getType(), b);
+					else
+						r = createImplicitCast(r, l->getType(), b);
+				}
+			}
 
-        llvm::Value* operator()(AstNodes::UnaryExpr& unOp) {
-            llvm::Value* operand = visit(unOp.operand.get());
-            operand = readLValueFromMemory(unOp.operand.get(), operand, b);
-            switch(unOp.op) {
-                case AstNodes::UnaryOpType::Negation: return b.CreateNeg(operand, "neg");
-            }
-            return nullptr;
-        }
+			switch (binOp.op) {
+			case AstNodes::BinaryOpType::Addition: return b.CreateAdd(l, r, "add");
+			case AstNodes::BinaryOpType::Subtraction: return b.CreateSub(l, r, "sub");
+			case AstNodes::BinaryOpType::Multiplication: return b.CreateMul(l, r, "mul");
+			case AstNodes::BinaryOpType::Division: return b.CreateSDiv(l, r, "div");
+			}
+			return nullptr;
+		}
 
-        llvm::Value* operator()(AstNodes::LiteralExpr& lit) {
-             llvm::Type* literalLlvmType = nullptr;
-             
-             if (expectedType) {
-                 literalLlvmType = LlvmTypeGenerator::convertAstToLlvmType(expectedType->getType());
-             }
-             else if (currentExpr && currentExpr->getType()) {
-                 literalLlvmType = LlvmTypeGenerator::convertAstToLlvmType(currentExpr->getType()->getType());
-             }
+		llvm::Value* operator()(AstNodes::CmpExpr& cmpOp) {
+			llvm::Value* l = visit(cmpOp.left.get());
+			llvm::Value* r = visit(cmpOp.right.get());
+			l = readLValueFromMemory(cmpOp.left.get(), l, b);
+			r = readLValueFromMemory(cmpOp.right.get(), r, b);
 
-             if (!literalLlvmType) {
-                 return std::visit(overloaded{
-                    [&](long long v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), v); }, 
-                    [&](unsigned long long v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), v); }, 
-                    [&](bool v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt1Ty(b.getContext()), v); },
-                    [&](double v) -> llvm::Value* { return llvm::ConstantFP::get(llvm::Type::getFloatTy(b.getContext()), v); }, 
-                    [&](const std::string&) -> llvm::Value* { return nullptr; }
-                }, lit.value);
-             }
+			AstType* type = cmpOp.left->getType();
+			if (!type) type = cmpOp.right->getType();
 
-             return std::visit(overloaded{
-                [&](long long v) -> llvm::Value* { 
-                    return llvm::ConstantInt::get(literalLlvmType, v); 
-                }, 
-                [&](unsigned long long v) -> llvm::Value* { 
-                    return llvm::ConstantInt::get(literalLlvmType, v); 
-                }, 
-                [&](bool v) -> llvm::Value* { 
-                    return llvm::ConstantInt::get(literalLlvmType, v); 
-                },
-                [&](double v) -> llvm::Value* { 
-                    return llvm::ConstantFP::get(literalLlvmType, v); 
-                },
-                [&](const std::string&) -> llvm::Value* { return nullptr; }
-            }, lit.value);
-        }
+			bool isFloat = (l->getType()->isFloatingPointTy());
+			bool isUnsigned = type ? type->isUnsigned() : false;
 
-        llvm::Value* operator()(AstNodes::VariableRefExpr& varRef) {
-             if(varRef.declaration) {
-                 return getLlvmCache<>().getValue(varRef.declaration);
-             } else {
-                 return getAllocInst(varRef.name, b);
-             }
-        }
+			switch (cmpOp.op) {
+			case AstNodes::CmpOpType::Equal: return isFloat ? b.CreateFCmpOEQ(l, r) : b.CreateICmpEQ(l, r);
+			case AstNodes::CmpOpType::NotEqual: return isFloat ? b.CreateFCmpONE(l, r) : b.CreateICmpNE(l, r);
+			case AstNodes::CmpOpType::GreaterThan: return isFloat ? b.CreateFCmpOGT(l, r) : (isUnsigned ? b.CreateICmpUGT(l, r) : b.CreateICmpSGT(l, r));
+			case AstNodes::CmpOpType::GreaterOrEq: return isFloat ? b.CreateFCmpOGE(l, r) : (isUnsigned ? b.CreateICmpUGE(l, r) : b.CreateICmpSGE(l, r));
+			case AstNodes::CmpOpType::LessThan: return isFloat ? b.CreateFCmpOLT(l, r) : (isUnsigned ? b.CreateICmpULT(l, r) : b.CreateICmpSLT(l, r));
+			case AstNodes::CmpOpType::LessOrEq: return isFloat ? b.CreateFCmpOLE(l, r) : (isUnsigned ? b.CreateICmpULE(l, r) : b.CreateICmpSLE(l, r));
+			}
+			return nullptr;
+		}
 
-        llvm::Value* operator()(AstNodes::FunctionCallExpr& call) {
-             llvm::Module* module = b.GetInsertBlock()->getModule();
-             llvm::Function* fun = module->getFunction(call.funcName);
-             if(fun) {
-                 std::vector<llvm::Value*> args;
-                 for(auto& argExpr : call.args) {
-                     args.push_back(visit(argExpr.get()));
-                 }
-                 return b.CreateCall(fun, args);
-             }
-             return nullptr;
-        }
+		llvm::Value* operator()(AstNodes::UnaryExpr& unOp) {
+			llvm::Value* operand = visit(unOp.operand.get());
+			operand = readLValueFromMemory(unOp.operand.get(), operand, b);
+			switch (unOp.op) {
+			case AstNodes::UnaryOpType::Negation: return b.CreateNeg(operand, "neg");
+			}
+			return nullptr;
+		}
 
-        llvm::Value* operator()(AstNodes::CastExpr& cast) {
-            llvm::Value* srcValue = visit(cast.expr.get());
-            srcValue = readLValueFromMemory(cast.expr.get(), srcValue, b);
+		llvm::Value* operator()(AstNodes::LiteralExpr& lit) {
+			llvm::Type* literalLlvmType = nullptr;
 
-            llvm::Type* destType = nullptr;
-            if (currentExpr && currentExpr->getType())
-                destType = LlvmTypeGenerator::convertAstToLlvmType(currentExpr->getType()->getType());
-            
-            if (!destType && expectedType)
-                destType = LlvmTypeGenerator::convertAstToLlvmType(expectedType->getType());
+			if (expectedType) {
+				literalLlvmType = LlvmTypeGenerator::convertAstToLlvmType(expectedType->getType());
+			}
+			else if (currentExpr && currentExpr->getType()) {
+				literalLlvmType = LlvmTypeGenerator::convertAstToLlvmType(currentExpr->getType()->getType());
+			}
 
-            if (!srcValue || !destType) return nullptr;
-                
-            auto op = cast.castOp;
-            
-            if (op & CastOp::SIToFP) return b.CreateSIToFP(srcValue, destType, "cast_sitofp");
-            if (op & CastOp::UIToFP) return b.CreateUIToFP(srcValue, destType, "cast_uitofp");
-            if (op & CastOp::FPToSI) return b.CreateFPToSI(srcValue, destType, "cast_fptosi");
-            if (op & CastOp::FPToUI) return b.CreateFPToUI(srcValue, destType, "cast_fptoui");
-            if (op & CastOp::FPExt)  return b.CreateFPExt(srcValue, destType, "cast_fpext");
-            if (op & CastOp::FPTrunc) return b.CreateFPTrunc(srcValue, destType, "cast_fptrunc");
-            if (op & CastOp::SExt)   return b.CreateSExt(srcValue, destType, "cast_sext");
-            if (op & CastOp::ZExt)   return b.CreateZExt(srcValue, destType, "cast_zext");
-            if (op & CastOp::Trunc)  return b.CreateTrunc(srcValue, destType, "cast_trunc");
-            
-            if (op & CastOp::BitCast) {
-                if (srcValue->getType() != destType) return b.CreateBitCast(srcValue, destType, "cast_bitcast");
-                return srcValue; 
-            }
-            
-            return srcValue;
-        }
+			if (!literalLlvmType) {
+				return std::visit(overloaded{
+				   [&](long long v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), v); },
+				   [&](unsigned long long v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), v); },
+				   [&](bool v) -> llvm::Value* { return llvm::ConstantInt::get(llvm::Type::getInt1Ty(b.getContext()), v); },
+				   [&](double v) -> llvm::Value* { return llvm::ConstantFP::get(llvm::Type::getFloatTy(b.getContext()), v); },
+				   [&](const std::string&) -> llvm::Value* { return nullptr; }
+					}, lit.value);
+			}
 
-        llvm::Value* operator()(AstNodes::ArrayIndexingExpr& expr) {
-            llvm::Value* arrBase = visit(expr.arrayExpr.get());
-            AstVariableDecl* decl = nullptr;
+			return std::visit(overloaded{
+			   [&](long long v) -> llvm::Value* {
+				   return llvm::ConstantInt::get(literalLlvmType, v);
+			   },
+			   [&](unsigned long long v) -> llvm::Value* {
+				   return llvm::ConstantInt::get(literalLlvmType, v);
+			   },
+			   [&](bool v) -> llvm::Value* {
+				   return llvm::ConstantInt::get(literalLlvmType, v);
+			   },
+			   [&](double v) -> llvm::Value* {
+				   return llvm::ConstantFP::get(literalLlvmType, v);
+			   },
+			   [&](const std::string&) -> llvm::Value* { return nullptr; }
+				}, lit.value);
+		}
 
-            std::visit(overloaded {
-                [&](AstNodes::VariableRefExpr& v) {
-                    decl = ast_element_cast<AstVariableDecl>(v.declaration);
-                },
-                [](auto&&) {}
-            }, expr.arrayExpr->getExpression());
+		llvm::Value* operator()(AstNodes::VariableRefExpr& varRef) {
+			if (varRef.declaration) {
+				return getLlvmCache<>().getValue(varRef.declaration);
+			}
+			else {
+				return getAllocInst(varRef.name, b);
+			}
+		}
 
-            if (arrBase && decl)
-            {
-                llvm::ArrayType* at = generateArrayTypeInstruction(decl->getVarType(), b);
-                std::vector<llvm::Value*> llvmIdxs{llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), 0)};
-                
-                for (auto& idx : expr.indices) {
-                    llvmIdxs.push_back(visit(idx.get()));
-                }
-                return b.CreateGEP(at, arrBase, llvmIdxs);
-            }
-            return nullptr;
-        }
-        
-        template <typename T>
-        llvm::Value* operator()(T& node) { 
-            assert(false && "Unhandled AST Node in LLVM Expr Visitor");
-            return nullptr; 
-        }
-    };
+		llvm::Value* operator()(AstNodes::FunctionCallExpr& call) {
+			llvm::Module* module = b.GetInsertBlock()->getModule();
+			llvm::Function* fun = module->getFunction(call.funcName);
+			if (fun) {
+				std::vector<llvm::Value*> args;
+				auto* funType = fun->getFunctionType();
+				for (size_t i = 0; i < call.args.size(); ++i) {
+					llvm::Value* argVal = visit(call.args[i].get());
+					argVal = readLValueFromMemory(call.args[i].get(), argVal, b);
+					
+					if (i < funType->getNumParams()) {
+						llvm::Type* expectedType = funType->getParamType(i);
+						if (argVal->getType() != expectedType) {
+							argVal = createImplicitCast(argVal, expectedType, b);
+						}
+					}
+					args.push_back(argVal);
+				}
+				return b.CreateCall(fun, args);
+			}
+			return nullptr;
+		}
+
+		llvm::Value* operator()(AstNodes::CastExpr& cast) {
+			llvm::Value* srcValue = visit(cast.expr.get());
+			srcValue = readLValueFromMemory(cast.expr.get(), srcValue, b);
+
+			llvm::Type* destType = nullptr;
+			if (currentExpr && currentExpr->getType())
+				destType = LlvmTypeGenerator::convertAstToLlvmType(currentExpr->getType()->getType());
+
+			if (!destType && expectedType)
+				destType = LlvmTypeGenerator::convertAstToLlvmType(expectedType->getType());
+
+			if (!srcValue || !destType) return nullptr;
+
+			auto op = cast.castOp;
+
+			if (op & CastOp::SIToFP) return b.CreateSIToFP(srcValue, destType, "cast_sitofp");
+			if (op & CastOp::UIToFP) return b.CreateUIToFP(srcValue, destType, "cast_uitofp");
+			if (op & CastOp::FPToSI) return b.CreateFPToSI(srcValue, destType, "cast_fptosi");
+			if (op & CastOp::FPToUI) return b.CreateFPToUI(srcValue, destType, "cast_fptoui");
+			if (op & CastOp::FPExt)  return b.CreateFPExt(srcValue, destType, "cast_fpext");
+			if (op & CastOp::FPTrunc) return b.CreateFPTrunc(srcValue, destType, "cast_fptrunc");
+			if (op & CastOp::SExt)   return b.CreateSExt(srcValue, destType, "cast_sext");
+			if (op & CastOp::ZExt)   return b.CreateZExt(srcValue, destType, "cast_zext");
+			if (op & CastOp::Trunc)  return b.CreateTrunc(srcValue, destType, "cast_trunc");
+
+			if (op & CastOp::BitCast) {
+				if (srcValue->getType() != destType) return b.CreateBitCast(srcValue, destType, "cast_bitcast");
+				return srcValue;
+			}
+
+			return srcValue;
+		}
+
+		llvm::Value* operator()(AstNodes::ArrayIndexingExpr& expr) {
+			llvm::Value* arrBase = visit(expr.arrayExpr.get());
+			AstVariableDecl* decl = nullptr;
+
+			std::visit(overloaded{
+				[&](AstNodes::VariableRefExpr& v) {
+					decl = ast_element_cast<AstVariableDecl>(v.declaration);
+				},
+				[](auto&&) {}
+				}, expr.arrayExpr->getExpression());
+
+			if (arrBase && decl)
+			{
+				llvm::ArrayType* at = generateArrayTypeInstruction(decl->getVarType(), b);
+				std::vector<llvm::Value*> llvmIdxs{ llvm::ConstantInt::get(llvm::Type::getInt64Ty(b.getContext()), 0) };
+
+				for (auto& idx : expr.indices) {
+					llvmIdxs.push_back(visit(idx.get()));
+				}
+				return b.CreateGEP(at, arrBase, llvmIdxs);
+			}
+			return nullptr;
+		}
+
+		template <typename T>
+		llvm::Value* operator()(T& node) {
+			assert(false && "Unhandled AST Node in LLVM Expr Visitor");
+			return nullptr;
+		}
+	};
 
 	static llvm::Value* generateExprInstruction(AstExpr* expr, llvm::IRBuilder<>& b, AstType* expectedType = nullptr)
 	{
-        if(!expr) return nullptr;
-        LlvmExprVisitor visitor(b, expr, expectedType);
-        return expr->accept(visitor);
+		if (!expr) return nullptr;
+		LlvmExprVisitor visitor(b, expr, expectedType);
+		return expr->accept(visitor);
 	}
 
 	static void generateAssgnInstruction(AstStatement* assgn, llvm::IRBuilder<>& b)
 	{
 		if (assgn && assgn->lhs() && assgn->rhs())
 		{
-            AstElement* lhs = assgn->lhs();
+			AstElement* lhs = assgn->lhs();
 			llvm::Value* variable = nullptr;
-            AstType* targetAstType = nullptr;
+			AstType* targetAstType = nullptr;
 
 			if (AstExpr* expr = ast_element_cast<AstExpr>(lhs))
 			{
-                variable = generateExprInstruction(expr, b);
-                targetAstType = expr->getType(); 
-                
-                if (!targetAstType) {
-                     std::visit(overloaded {
-                        [&](AstNodes::VariableRefExpr& v) {
-                            if(auto* decl = ast_element_cast<AstVariableDecl>(v.declaration))
-                                targetAstType = decl->getVarType();
-                        },
-                        [&](AstNodes::ArrayIndexingExpr& idx) {
-                             // Infer type if possible
-                        },
-                        [](auto&&){}
-                     }, expr->getExpression());
-                }
+				variable = generateExprInstruction(expr, b);
+				targetAstType = expr->getType();
+
+				if (!targetAstType) {
+					std::visit(overloaded{
+					   [&](AstNodes::VariableRefExpr& v) {
+						   if (auto* decl = ast_element_cast<AstVariableDecl>(v.declaration))
+							   targetAstType = decl->getVarType();
+					   },
+					   [&](AstNodes::ArrayIndexingExpr& idx) {
+							// Infer type if possible
+					   },
+					   [](auto&&) {}
+						}, expr->getExpression());
+				}
 			}
 			else {
-				 variable = getAllocInst(assgn->lhs()->getName(), b);
-                 if(AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(lhs)) {
-                     targetAstType = decl->getVarType();
-                 }
-            }
+				variable = getAllocInst(assgn->lhs()->getName(), b);
+				if (AstVariableDecl* decl = ast_element_cast<AstVariableDecl>(lhs)) {
+					targetAstType = decl->getVarType();
+				}
+			}
 
 			llvm::Value* exprInstruction = generateExprInstruction(ast_element_cast<AstExpr>(assgn->rhs()), b, targetAstType);
 			exprInstruction = readLValueFromMemory(assgn->rhs(), exprInstruction, b);
-			
-            if (variable && targetAstType) {
-                llvm::Type* valType = LlvmTypeGenerator::convertAstToLlvmType(targetAstType->getType());
-                
-                if (exprInstruction->getType() != valType) {
-                    exprInstruction = createImplicitCast(exprInstruction, valType, b);
-                }
-            }
 
-            if(variable && exprInstruction)
-			    b.CreateStore(exprInstruction, variable, false);
+			if (variable && targetAstType) {
+				llvm::Type* valType = LlvmTypeGenerator::convertAstToLlvmType(targetAstType->getType());
+
+				if (exprInstruction->getType() != valType) {
+					exprInstruction = createImplicitCast(exprInstruction, valType, b);
+				}
+			}
+
+			if (variable && exprInstruction)
+				b.CreateStore(exprInstruction, variable, false);
 		}
 	}
 
 	static llvm::Value* generateRhsInstruction(AstStatement* stmt, llvm::IRBuilder<>& b, AstType* expectedType = nullptr)
 	{
-		if(stmt)
+		if (stmt)
 			if (AstExpr* expr = ast_element_cast<AstExpr>(stmt->rhs()))
 			{
 				return generateExprInstruction(expr, b, expectedType);
 			}
 		return nullptr;
 	}
-	
+
 	static llvm::Value* generateRetInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
 	{
 		llvm::Value* retVal = generateRhsInstruction(stmt, b);
 		if (retVal)
 		{
-            retVal = readLValueFromMemory(stmt->rhs(), retVal, b); 
+			retVal = readLValueFromMemory(stmt->rhs(), retVal, b);
+
+			llvm::Function* func = b.GetInsertBlock()->getParent();
+			llvm::Type* retType = func->getReturnType();
+			if (retVal->getType() != retType) {
+				retVal = createImplicitCast(retVal, retType, b);
+			}
+
 			return b.CreateRet(retVal);
 		}
 		return nullptr;
@@ -399,7 +420,7 @@ public:
 			assert(0);
 			return nullptr;
 		}
-		return generateArrayTypeInstruction(type, b); 
+		return generateArrayTypeInstruction(type, b);
 	}
 
 	static llvm::Value* generateDeclInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
@@ -431,14 +452,72 @@ public:
 			if (rhs)
 			{
 				llvm::Value* initVal = generateExprInstruction(rhs, b, type);
-                initVal = readLValueFromMemory(rhs, initVal, b);
-                
-                initVal = createImplicitCast(initVal, generatedType, b);
+				initVal = readLValueFromMemory(rhs, initVal, b);
+
+				initVal = createImplicitCast(initVal, generatedType, b);
 
 				b.CreateStore(initVal, val);
 			}
 		}
 		return val;
+	}
+
+	static void generateConditionBlockInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
+	{
+		if (!stmt || !stmt->isControlBlockStmt()) return;
+        auto& controlBlock = stmt->getControlBlock();
+        if (!controlBlock) return;
+
+        // 1. Condition
+        llvm::Value* condVal = generateExprInstruction(stmt->rhs(), b);
+        if (!condVal) return; 
+        
+        condVal = readLValueFromMemory(stmt->rhs(), condVal, b);
+
+        if (condVal->getType()->isIntegerTy() && condVal->getType()->getIntegerBitWidth() != 1) {
+            condVal = b.CreateICmpNE(condVal, llvm::ConstantInt::get(condVal->getType(), 0), "tobool");
+        } else if (condVal->getType()->isFloatingPointTy()) {
+             condVal = b.CreateFCmpONE(condVal, llvm::ConstantFP::get(condVal->getType(), 0.0), "tobool");
+        }
+
+        llvm::Function* TheFunction = b.GetInsertBlock()->getParent();
+        
+        llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(b.getContext(), "then", TheFunction);
+        llvm::BasicBlock* ElseBB = controlBlock->getOtherBranch() ? llvm::BasicBlock::Create(b.getContext(), "else") : nullptr;
+        llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(b.getContext(), "ifcont");
+
+        b.CreateCondBr(condVal, ThenBB, ElseBB ? ElseBB : MergeBB);
+
+        // Emit Then
+        b.SetInsertPoint(ThenBB);
+        
+        auto& thenScope = controlBlock->getBranchScope();
+        if (thenScope) {
+            for(auto& el : thenScope->getStmts()) {
+                 generateInstruction(el.get(), b);
+            }
+        }
+        
+        if (!ThenBB->getTerminator())
+            b.CreateBr(MergeBB);
+
+        if (ElseBB) {
+            TheFunction->insert(TheFunction->end(), ElseBB);
+            b.SetInsertPoint(ElseBB);
+            
+            auto& elseScope = controlBlock->getOtherBranch();
+            if (elseScope) {
+                 for(auto& el : elseScope->getStmts()) {
+                     generateInstruction(el.get(), b);
+                }
+            }
+            
+            if (!ElseBB->getTerminator())
+                b.CreateBr(MergeBB);
+        }
+
+        TheFunction->insert(TheFunction->end(), MergeBB);
+        b.SetInsertPoint(MergeBB);
 	}
 
 	static void generateInstruction(AstElement* stmt, llvm::IRBuilder<>& b)
@@ -458,16 +537,22 @@ public:
 				generateRhsInstruction(_stmt, b);
 				break;
 			case AstStatement::STMT_TYPE::RET_STMT:
-				{
-					llvm::Value* retVal = generateRetInstruction(_stmt, b);
-					break;
-				}
-			case AstStatement::STMT_TYPE::DECLARATION:
-				{
-				generateDeclInstruction(_stmt, b);
-				}
+			{
+				llvm::Value* retVal = generateRetInstruction(_stmt, b);
+				break;
 			}
-			return ;
+			case AstStatement::STMT_TYPE::DECLARATION:
+			{
+				generateDeclInstruction(_stmt, b);
+				break;
+			}
+			case AstStatement::STMT_TYPE::CONDITION_BLOCK:
+			{
+				generateConditionBlockInstruction(_stmt, b);
+				break;
+			}
+			}
+			return;
 		}
 		return;
 	}
