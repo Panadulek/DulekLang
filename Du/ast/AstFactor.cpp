@@ -42,3 +42,13 @@ AstElement* AstFactory::StatementFactor::createConditionBlockStmt(AstElement* co
 	}
 	return nullptr;
 }
+
+std::unique_ptr<AstElement> AstFactory::StatementFactor::createAssigmentVariable(std::string_view lhs, AstElement* rhs, AstScope* currentScope)
+{
+	if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
+	{
+		auto ref = AstBuildSystem::Instance().getFactory().exprFactor().createRef(lhs);
+		return std::make_unique<AstStatement>(std::move(ref), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::ASSIGN, currentScope);
+	}
+	return nullptr;
+}

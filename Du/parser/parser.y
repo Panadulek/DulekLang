@@ -24,6 +24,7 @@
     #include "../ast/VariableDecorator.hpp"
     #include "../ast/AstExpr.hpp"
     #include "../ast/ScopeDecorator.hpp"
+    #include "../ast/AstStatement.hpp"
 
     AstScope* getActualScope();
 }
@@ -67,7 +68,7 @@
 
 /* ZMIANA: Powrót do surowych wskaźników w wariancie, aby uniknąć problemów z kopiowaniem unique_ptr */
 %type <AstExpr*> expr expr_index_op
-%type <AstElement*> decl_expr decl_fun decl_fun_header stmt
+%type <AstElement*> decl_expr decl_fun decl_fun_header stmt if_stmt if_header_stmt
 %type <AstArgs*> expr_list
 %type <ScopeDecorator::Function::CONTAINER*> decl_expr_list
 %type <ArrayDecorator::Array*> dimension_list
@@ -133,15 +134,14 @@ stmt:
     {
         $$ = nullptr;
     }
-    | IF_TOKEN LPAREN expr RPAREN 
-    {
-        AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt($3);
-	}  LBRACE stmt_list RBRACE
-    {
-        AstBuildSystem::Instance().getBuilder().exitScope();
-		$$ = nullptr;
-    }
-;
+    | if_stmt
+      {
+        $$ = nullptr;
+      }
+    | if_else_stmt
+      {
+	    $$ = nullptr;
+      }
 
 stmt_list:
       stmt
@@ -302,6 +302,31 @@ decl_fun:
          $$ = nullptr;
     }
 ;
+
+if_header_stmt:
+    IF_TOKEN LPAREN expr RPAREN
+    {
+        $$ = AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt($3);
+    }
+if_stmt:
+    if_header_stmt LBRACE stmt_list RBRACE
+    {
+        AstBuildSystem::Instance().getBuilder().exitScope();
+        $$ = $1;
+    }
+
+if_else_stmt:
+    if_stmt ELSE_TOKEN
+    {
+        AstElement * element = $1;
+        AstStatement* conditionalBlockStmt = dynamic_cast<AstStatement*>($1);
+        assert(conditionalBlockStmt != nullptr && conditionalBlockStmt->isControlBlockStmt());
+        conditionalBlockStmt->getControlBlock()->setupOtherBranch();
+        AstBuildSystem::Instance().getBuilder().beginScope(conditionalBlockStmt->getControlBlock()->getCurrentBranch().get());
+    } LBRACE stmt_list RBRACE
+    {
+       AstBuildSystem::Instance().getBuilder().exitScope();
+    }
 
 %%
 

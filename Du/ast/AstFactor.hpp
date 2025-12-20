@@ -209,25 +209,7 @@ class AstFactory
 
 	struct StatementFactor
 	{
-		std::unique_ptr<AstElement> createAssigmentVariable(std::string_view lhs, AstElement* rhs, AstScope* currentScope)
-		{
-
-			if (currentScope)
-			{
-				AstElement* scopeMember = currentScope->getElement(lhs);
-				if (!scopeMember)
-				{
-					Terminal::Output()->print(Terminal::MessageType::_ERROR, Terminal::CodeList::DU001, lhs);
-				}
-				else if (AstExpr* expr = ast_element_cast<AstExpr>(rhs))
-				{
-					// scopeMember is owned by Scope, so pass as raw pointer (reference)
-					// expr is owned by Statement, so pass as unique_ptr
-					return std::make_unique<AstStatement>(scopeMember, std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::ASSIGN, currentScope);
-				}
-			}
-			return nullptr;
-		}
+		std::unique_ptr<AstElement> createAssigmentVariable(std::string_view lhs, AstElement* rhs, AstScope* currentScope);
 		
 		std::unique_ptr<AstElement> createAssigmentVariable(AstElement* expr, AstElement* rhs)
 		{
@@ -290,7 +272,6 @@ class AstFactory
 		}
 
 		AstElement* createConditionBlockStmt(AstElement* condExpr);
-
 	};
 
 	std::unique_ptr<ScopeFactor> m_scopeFactor;

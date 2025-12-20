@@ -63,10 +63,11 @@
     #include "../ast/VariableDecorator.hpp"
     #include "../ast/AstExpr.hpp"
     #include "../ast/ScopeDecorator.hpp"
+    #include "../ast/AstStatement.hpp"
 
     AstScope* getActualScope();
 
-#line 70 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 71 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 
 
 # include <cstdlib> // std::abort
@@ -201,7 +202,7 @@
 #endif
 
 namespace yy {
-#line 205 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 206 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 
 
 
@@ -407,6 +408,8 @@ namespace yy {
       // decl_expr
       // decl_fun_header
       // decl_fun
+      // if_header_stmt
+      // if_stmt
       char dummy3[sizeof (AstElement*)];
 
       // expr
@@ -560,17 +563,20 @@ namespace yy {
         S_YYACCEPT = 34,                         // $accept
         S_program = 35,                          // program
         S_stmt = 36,                             // stmt
-        S_37_1 = 37,                             // $@1
-        S_stmt_list = 38,                        // stmt_list
-        S_expr = 39,                             // expr
-        S_cmp_op = 40,                           // cmp_op
-        S_expr_index_op = 41,                    // expr_index_op
-        S_expr_list = 42,                        // expr_list
-        S_dimension_list = 43,                   // dimension_list
-        S_decl_expr = 44,                        // decl_expr
-        S_decl_expr_list = 45,                   // decl_expr_list
-        S_decl_fun_header = 46,                  // decl_fun_header
-        S_decl_fun = 47                          // decl_fun
+        S_stmt_list = 37,                        // stmt_list
+        S_expr = 38,                             // expr
+        S_cmp_op = 39,                           // cmp_op
+        S_expr_index_op = 40,                    // expr_index_op
+        S_expr_list = 41,                        // expr_list
+        S_dimension_list = 42,                   // dimension_list
+        S_decl_expr = 43,                        // decl_expr
+        S_decl_expr_list = 44,                   // decl_expr_list
+        S_decl_fun_header = 45,                  // decl_fun_header
+        S_decl_fun = 46,                         // decl_fun
+        S_if_header_stmt = 47,                   // if_header_stmt
+        S_if_stmt = 48,                          // if_stmt
+        S_if_else_stmt = 49,                     // if_else_stmt
+        S_50_1 = 50                              // $@1
       };
     };
 
@@ -619,6 +625,8 @@ namespace yy {
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         value.move< AstElement* > (std::move (that.value));
         break;
 
@@ -815,6 +823,8 @@ switch (yykind)
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         value.template destroy< AstElement* > ();
         break;
 
@@ -1820,8 +1830,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 316,     ///< Last index in yytable_.
-      yynnts_ = 14,  ///< Number of nonterminal symbols.
+      yylast_ = 318,     ///< Last index in yytable_.
+      yynnts_ = 17,  ///< Number of nonterminal symbols.
       yyfinal_ = 2 ///< Termination state number.
     };
 
@@ -1901,6 +1911,8 @@ switch (yykind)
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         value.copy< AstElement* > (YY_MOVE (that.value));
         break;
 
@@ -1969,6 +1981,8 @@ switch (yykind)
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         value.move< AstElement* > (YY_MOVE (s.value));
         break;
 
@@ -2060,7 +2074,7 @@ switch (yykind)
 
 
 } // yy
-#line 2064 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 2078 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 
 
 

@@ -42,7 +42,7 @@
 
 
 // Unqualified %code blocks.
-#line 31 "parser/parser.y"
+#line 32 "parser/parser.y"
 
     #include <iostream>
     #include <format>
@@ -224,6 +224,8 @@ namespace yy {
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         value.YY_MOVE_OR_COPY< AstElement* > (YY_MOVE (that.value));
         break;
 
@@ -276,6 +278,8 @@ namespace yy {
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         value.move< AstElement* > (YY_MOVE (that.value));
         break;
 
@@ -328,6 +332,8 @@ namespace yy {
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         value.copy< AstElement* > (that.value);
         break;
 
@@ -379,6 +385,8 @@ namespace yy {
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         value.move< AstElement* > (that.value);
         break;
 
@@ -675,6 +683,8 @@ namespace yy {
       case symbol_kind::S_decl_expr: // decl_expr
       case symbol_kind::S_decl_fun_header: // decl_fun_header
       case symbol_kind::S_decl_fun: // decl_fun
+      case symbol_kind::S_if_header_stmt: // if_header_stmt
+      case symbol_kind::S_if_stmt: // if_stmt
         yylhs.value.emplace< AstElement* > ();
         break;
 
@@ -721,34 +731,34 @@ namespace yy {
           switch (yyn)
             {
   case 3: // program: program stmt
-#line 85 "parser/parser.y"
+#line 86 "parser/parser.y"
                    {
     }
-#line 728 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 738 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 4: // stmt: ID_TOKEN "=" expr ";"
-#line 91 "parser/parser.y"
+#line 92 "parser/parser.y"
     {
         auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable(yystack_[3].value.as < std::string > (), yystack_[1].value.as < AstExpr* > (), getActualScope());
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
         yylhs.value.as < AstElement* > () = nullptr; 
     }
-#line 738 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 748 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 5: // stmt: expr_index_op "=" expr ";"
-#line 97 "parser/parser.y"
+#line 98 "parser/parser.y"
     {
         auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createAssigmentVariable(yystack_[3].value.as < AstExpr* > (), yystack_[1].value.as < AstExpr* > ());
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
         yylhs.value.as < AstElement* > () = nullptr;
     }
-#line 748 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 758 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 6: // stmt: decl_expr ";"
-#line 103 "parser/parser.y"
+#line 104 "parser/parser.y"
     {
         AstElement* decl = yystack_[1].value.as < AstElement* > ();
         AstBuildSystem::Instance().getBuilder().addElement(std::unique_ptr<AstElement>(decl));
@@ -757,11 +767,11 @@ namespace yy {
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
         yylhs.value.as < AstElement* > () = nullptr;
     }
-#line 761 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 771 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 7: // stmt: decl_expr "=" expr ";"
-#line 112 "parser/parser.y"
+#line 113 "parser/parser.y"
     {
         AstElement* decl = yystack_[3].value.as < AstElement* > ();
         AstBuildSystem::Instance().getBuilder().addElement(std::unique_ptr<AstElement>(decl));
@@ -770,52 +780,51 @@ namespace yy {
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
         yylhs.value.as < AstElement* > () = nullptr;
     }
-#line 774 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
-    break;
-
-  case 8: // stmt: expr ";"
-#line 121 "parser/parser.y"
-    {
-        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createStmt(yystack_[1].value.as < AstExpr* > ());
-        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
-        yylhs.value.as < AstElement* > () = nullptr;
-    }
 #line 784 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
-  case 9: // stmt: RET_STMT expr ";"
-#line 127 "parser/parser.y"
+  case 8: // stmt: expr ";"
+#line 122 "parser/parser.y"
     {
-        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createRetStmt(yystack_[1].value.as < AstExpr* > ());
+        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createStmt(yystack_[1].value.as < AstExpr* > ());
         AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
         yylhs.value.as < AstElement* > () = nullptr;
     }
 #line 794 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
+  case 9: // stmt: RET_STMT expr ";"
+#line 128 "parser/parser.y"
+    {
+        auto stmt_uptr = AstBuildSystem::Instance().getFactory().stmtFactor().createRetStmt(yystack_[1].value.as < AstExpr* > ());
+        AstBuildSystem::Instance().getBuilder().addElement(std::move(stmt_uptr));
+        yylhs.value.as < AstElement* > () = nullptr;
+    }
+#line 804 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+    break;
+
   case 10: // stmt: decl_fun
-#line 133 "parser/parser.y"
+#line 134 "parser/parser.y"
     {
         yylhs.value.as < AstElement* > () = nullptr;
     }
-#line 802 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 812 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
-  case 11: // $@1: %empty
-#line 137 "parser/parser.y"
-    {
-        AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt(yystack_[1].value.as < AstExpr* > ());
-	}
-#line 810 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+  case 11: // stmt: if_stmt
+#line 138 "parser/parser.y"
+      {
+        yylhs.value.as < AstElement* > () = nullptr;
+      }
+#line 820 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
-  case 12: // stmt: IF_TOKEN "(" expr ")" $@1 "{" stmt_list "}"
-#line 140 "parser/parser.y"
-    {
-        AstBuildSystem::Instance().getBuilder().exitScope();
-		yylhs.value.as < AstElement* > () = nullptr;
-    }
-#line 819 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+  case 12: // stmt: if_else_stmt
+#line 142 "parser/parser.y"
+      {
+	    yylhs.value.as < AstElement* > () = nullptr;
+      }
+#line 828 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 15: // expr: expr "+" expr
@@ -823,7 +832,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createAddExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
-#line 827 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 836 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 16: // expr: expr "-" expr
@@ -831,7 +840,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createSubExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
-#line 835 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 844 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 17: // expr: expr "*" expr
@@ -839,7 +848,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createMulExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
-#line 843 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 852 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 18: // expr: expr "/" expr
@@ -847,7 +856,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createDivExpr(yystack_[2].value.as < AstExpr* > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
-#line 851 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 860 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 19: // expr: expr cmp_op expr
@@ -855,7 +864,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCmpExpr(yystack_[2].value.as < AstExpr* > (), yystack_[1].value.as < AstExpr::CMP_OPERATION > (), yystack_[0].value.as < AstExpr* > ()).release();
     }
-#line 859 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 868 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 20: // expr: "-" expr
@@ -863,7 +872,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = nullptr; 
     }
-#line 867 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 876 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 21: // expr: "(" expr ")"
@@ -871,7 +880,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = yystack_[1].value.as < AstExpr* > ();
     }
-#line 875 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 884 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 22: // expr: NUMBER_TOKEN
@@ -879,7 +888,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createUnsignedConst(yystack_[0].value.as < int > ()).release();
     }
-#line 883 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 892 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 23: // expr: TRUE_TOKEN
@@ -887,7 +896,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(true).release();
     }
-#line 891 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 900 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 24: // expr: FALSE_TOKEN
@@ -895,7 +904,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createBoolConst(false).release();
     }
-#line 899 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 908 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 25: // expr: CONST_STR
@@ -903,7 +912,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createStrConst(yystack_[0].value.as < std::string > ()).release();
     }
-#line 907 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 916 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 26: // expr: ID_TOKEN
@@ -911,7 +920,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createRef(yystack_[0].value.as < std::string > ()).release();
     }
-#line 915 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 924 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 27: // expr: ID_TOKEN "(" expr_list ")"
@@ -919,7 +928,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun(yystack_[3].value.as < std::string > (), getActualScope(), yystack_[1].value.as < AstArgs* > ()).release();
     }
-#line 923 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 932 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 28: // expr: ID_TOKEN "(" ")"
@@ -927,7 +936,7 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createCallFun(yystack_[2].value.as < std::string > (), getActualScope(), nullptr).release();
     }
-#line 931 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 940 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 29: // expr: expr_index_op
@@ -935,43 +944,43 @@ namespace yy {
     {
         yylhs.value.as < AstExpr* > () = yystack_[0].value.as < AstExpr* > ();
     }
-#line 939 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 948 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 30: // cmp_op: EQ
 #line 215 "parser/parser.y"
          { yylhs.value.as < AstExpr::CMP_OPERATION > () = AstExpr::CMP_OPERATION::EQUAL; }
-#line 945 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 954 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 31: // cmp_op: NE
 #line 216 "parser/parser.y"
          { yylhs.value.as < AstExpr::CMP_OPERATION > () = AstExpr::CMP_OPERATION::NOT_EQUAL; }
-#line 951 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 960 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 32: // cmp_op: LT
 #line 217 "parser/parser.y"
          { yylhs.value.as < AstExpr::CMP_OPERATION > () = AstExpr::CMP_OPERATION::LESS_THAN; }
-#line 957 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 966 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 33: // cmp_op: GT
 #line 218 "parser/parser.y"
          { yylhs.value.as < AstExpr::CMP_OPERATION > () = AstExpr::CMP_OPERATION::GREATER_THAN; }
-#line 963 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 972 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 34: // cmp_op: LE
 #line 219 "parser/parser.y"
          { yylhs.value.as < AstExpr::CMP_OPERATION > () = AstExpr::CMP_OPERATION::LESS_OR_EQ; }
-#line 969 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 978 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 35: // cmp_op: GE
 #line 220 "parser/parser.y"
          { yylhs.value.as < AstExpr::CMP_OPERATION > () = AstExpr::CMP_OPERATION::GREATER_OR_EQ; }
-#line 975 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 984 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 36: // expr_index_op: ID_TOKEN dimension_list
@@ -980,7 +989,7 @@ namespace yy {
         std::unique_ptr<ArrayDecorator::Array> dims(yystack_[0].value.as < ArrayDecorator::Array* > ()); // RAII
         yylhs.value.as < AstExpr* > () = AstBuildSystem::Instance().getFactory().exprFactor().createArrayIndexingOp(yystack_[1].value.as < std::string > (), *dims).release();
     }
-#line 984 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 993 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 37: // expr_list: expr
@@ -989,7 +998,7 @@ namespace yy {
         yylhs.value.as < AstArgs* > () = new AstArgs();
         yylhs.value.as < AstArgs* > ()->push(yystack_[0].value.as < AstExpr* > ());
     }
-#line 993 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1002 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 38: // expr_list: expr_list "," expr
@@ -998,7 +1007,7 @@ namespace yy {
         yylhs.value.as < AstArgs* > () = yystack_[2].value.as < AstArgs* > ();
         yylhs.value.as < AstArgs* > ()->push(yystack_[0].value.as < AstExpr* > ());
     }
-#line 1002 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1011 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 39: // dimension_list: "[" expr "]"
@@ -1007,7 +1016,7 @@ namespace yy {
         yylhs.value.as < ArrayDecorator::Array* > () = new ArrayDecorator::Array();
         yylhs.value.as < ArrayDecorator::Array* > ()->emplace_back(std::make_unique<ArrayDecorator::Dimension>(yystack_[1].value.as < AstExpr* > ()));
     }
-#line 1011 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1020 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 40: // dimension_list: dimension_list "[" expr "]"
@@ -1016,7 +1025,7 @@ namespace yy {
         yylhs.value.as < ArrayDecorator::Array* > () = yystack_[3].value.as < ArrayDecorator::Array* > ();
         yylhs.value.as < ArrayDecorator::Array* > ()->emplace_back(std::make_unique<ArrayDecorator::Dimension>(yystack_[1].value.as < AstExpr* > ()));
     }
-#line 1020 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1029 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 41: // decl_expr: ID_TOKEN ID_TOKEN
@@ -1024,7 +1033,7 @@ namespace yy {
     {
         yylhs.value.as < AstElement* > () = AstBuildSystem::Instance().getFactory().varFactor().createVariable(yystack_[1].value.as < std::string > (), yystack_[0].value.as < std::string > (), getActualScope()).release();
     }
-#line 1028 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1037 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 42: // decl_expr: ID_TOKEN ID_TOKEN dimension_list
@@ -1032,7 +1041,7 @@ namespace yy {
     {
         yylhs.value.as < AstElement* > () = AstBuildSystem::Instance().getFactory().varFactor().createArray(yystack_[2].value.as < std::string > (), yystack_[1].value.as < std::string > (), yystack_[0].value.as < ArrayDecorator::Array* > (), getActualScope()).release();
     }
-#line 1036 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1045 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 43: // decl_expr_list: decl_expr
@@ -1041,7 +1050,7 @@ namespace yy {
         yylhs.value.as < ScopeDecorator::Function::CONTAINER* > () = new ScopeDecorator::Function::CONTAINER();
         yylhs.value.as < ScopeDecorator::Function::CONTAINER* > ()->emplace_back(yystack_[0].value.as < AstElement* > ());
     }
-#line 1045 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1054 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 44: // decl_expr_list: decl_expr_list "," decl_expr
@@ -1050,7 +1059,7 @@ namespace yy {
         yylhs.value.as < ScopeDecorator::Function::CONTAINER* > () = yystack_[2].value.as < ScopeDecorator::Function::CONTAINER* > ();
         yylhs.value.as < ScopeDecorator::Function::CONTAINER* > ()->emplace_back(yystack_[0].value.as < AstElement* > ());
     }
-#line 1054 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1063 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 45: // decl_fun_header: ID_TOKEN "(" ")" ARROW_TOKEN ID_TOKEN
@@ -1061,7 +1070,7 @@ namespace yy {
         AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
         yylhs.value.as < AstElement* > () = nullptr; 
     }
-#line 1065 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1074 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 46: // decl_fun_header: ID_TOKEN "(" decl_expr_list ")" ARROW_TOKEN ID_TOKEN
@@ -1072,7 +1081,7 @@ namespace yy {
         AstBuildSystem::Instance().getBuilder().beginScope(funRawPtr);
         yylhs.value.as < AstElement* > () = nullptr;
     }
-#line 1076 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1085 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
   case 47: // decl_fun: decl_fun_header "{" stmt_list "}"
@@ -1081,11 +1090,48 @@ namespace yy {
          AstBuildSystem::Instance().getBuilder().exitScope();
          yylhs.value.as < AstElement* > () = nullptr;
     }
-#line 1085 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1094 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+    break;
+
+  case 48: // if_header_stmt: IF_TOKEN "(" expr ")"
+#line 308 "parser/parser.y"
+    {
+        yylhs.value.as < AstElement* > () = AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt(yystack_[1].value.as < AstExpr* > ());
+    }
+#line 1102 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+    break;
+
+  case 49: // if_stmt: if_header_stmt "{" stmt_list "}"
+#line 313 "parser/parser.y"
+    {
+        AstBuildSystem::Instance().getBuilder().exitScope();
+        yylhs.value.as < AstElement* > () = yystack_[3].value.as < AstElement* > ();
+    }
+#line 1111 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+    break;
+
+  case 50: // $@1: %empty
+#line 320 "parser/parser.y"
+    {
+        AstElement * element = yystack_[1].value.as < AstElement* > ();
+        AstStatement* conditionalBlockStmt = dynamic_cast<AstStatement*>(yystack_[1].value.as < AstElement* > ());
+        assert(conditionalBlockStmt != nullptr && conditionalBlockStmt->isControlBlockStmt());
+        conditionalBlockStmt->getControlBlock()->setupOtherBranch();
+        AstBuildSystem::Instance().getBuilder().beginScope(conditionalBlockStmt->getControlBlock()->getCurrentBranch().get());
+    }
+#line 1123 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+    break;
+
+  case 51: // if_else_stmt: if_stmt ELSE_TOKEN $@1 "{" stmt_list "}"
+#line 327 "parser/parser.y"
+    {
+       AstBuildSystem::Instance().getBuilder().exitScope();
+    }
+#line 1131 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
     break;
 
 
-#line 1089 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1135 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
 
             default:
               break;
@@ -1278,161 +1324,163 @@ namespace yy {
 
 
 
-  const signed char parser::yypact_ninf_ = -44;
+  const signed char parser::yypact_ninf_ = -42;
 
   const signed char parser::yytable_ninf_ = -1;
 
   const short
   parser::yypact_[] =
   {
-     -44,    50,   -44,   141,    -2,   -44,   -44,   -15,   -44,   -44,
-     141,   141,   -44,   223,   -11,   -19,   -12,   -44,   -23,   235,
-     -44,    -8,   141,   128,   141,    -7,   141,   -44,   193,   -44,
-     -44,   -44,   -44,   -44,   -44,   141,   141,   141,   141,   -44,
-     141,   141,   141,   -44,   111,   138,   -44,    -7,   247,     5,
-      18,   283,   -17,   -44,   -10,   155,   141,   208,   -44,    -3,
-      -3,   -44,   -44,   293,   259,   271,   -44,    74,   -44,   -44,
-      26,   141,   -44,    28,    31,   -44,   174,   -44,   -44,   -44,
-     -44,   -44,   -44,   283,    30,   -44,    32,   -44,     9,   -44,
-     111,   101,   -44
+     -42,    56,   -42,   143,    27,   -42,   -42,    -5,   -42,   -42,
+     143,   143,   -42,   225,    -3,   -20,     4,   -42,     6,    17,
+     -42,   -21,   237,   -42,    14,   143,   130,   143,    22,   143,
+     -42,   195,   -42,   -42,   -42,   -42,   -42,   -42,   143,   143,
+     143,   143,   -42,   143,   143,   143,   -42,     7,     7,   -42,
+     140,   -42,    22,   249,    13,    52,   285,     3,   -42,    24,
+     157,   143,   210,   -42,    -6,    -6,   -42,   -42,   295,   261,
+     273,   -42,    74,   101,    36,   -42,   -42,    25,   143,   -42,
+      61,    64,   -42,   176,   -42,   -42,   -42,   -42,   -42,   -42,
+       7,   -42,   285,    65,   -42,    70,   -42,   111,   -42,   -42
   };
 
   const signed char
   parser::yydefact_[] =
   {
        2,     0,     1,     0,    26,    25,    22,     0,    23,    24,
-       0,     0,     3,     0,    29,     0,     0,    10,    26,     0,
-      29,    41,     0,     0,     0,    36,     0,    20,     0,    30,
-      31,    32,    33,    34,    35,     0,     0,     0,     0,     8,
-       0,     0,     0,     6,     0,     0,     9,    42,     0,    26,
-      28,    37,     0,    43,     0,     0,     0,     0,    21,    15,
-      16,    17,    18,    19,     0,     0,    13,     0,    28,     4,
-       0,     0,    27,     0,     0,    39,     0,    11,     5,     7,
-      47,    14,    45,    38,     0,    44,     0,    40,     0,    46,
-       0,     0,    12
+       0,     0,     3,     0,    29,     0,     0,    10,     0,    11,
+      12,    26,     0,    29,    41,     0,     0,     0,    36,     0,
+      20,     0,    30,    31,    32,    33,    34,    35,     0,     0,
+       0,     0,     8,     0,     0,     0,     6,     0,     0,    50,
+       0,     9,    42,     0,    26,    28,    37,     0,    43,     0,
+       0,     0,     0,    21,    15,    16,    17,    18,    19,     0,
+       0,    13,     0,     0,     0,    28,     4,     0,     0,    27,
+       0,     0,    39,     0,    48,     5,     7,    47,    14,    49,
+       0,    45,    38,     0,    44,     0,    40,     0,    46,    51
   };
 
   const signed char
   parser::yypgoto_[] =
   {
-     -44,   -44,     0,   -44,   -43,     4,   -44,    -1,   -44,    27,
-     -21,   -44,   -44,   -44
+     -42,   -42,     1,   -41,    -2,   -42,    -1,   -42,    60,   -23,
+     -42,   -42,   -42,   -42,   -42,   -42,   -42
   };
 
   const signed char
   parser::yydefgoto_[] =
   {
-       0,     1,    66,    88,    67,    13,    40,    20,    52,    25,
-      15,    54,    16,    17
+       0,     1,    71,    72,    13,    43,    23,    57,    28,    15,
+      59,    16,    17,    18,    19,    20,    74
   };
 
   const signed char
   parser::yytable_[] =
   {
-      14,    12,    53,    21,    45,    42,    43,    19,    24,    71,
-      21,    72,    26,    41,    27,    28,    73,    44,    74,    37,
-      38,    70,    22,    24,    56,    23,    48,    51,    55,    24,
-      57,    82,    45,    84,    86,    21,    24,    89,    90,    59,
-      60,    61,    62,    14,    63,    64,    65,    91,    47,    51,
-       2,     0,    85,     0,     3,     4,     5,     6,     7,     0,
-      76,     0,     8,     9,     0,     0,    14,    81,     0,     0,
-       0,    10,     0,     0,     0,    83,     0,    11,     3,     4,
-       5,     6,     7,     0,     0,     0,     8,     9,     0,    14,
-      14,    81,     0,     0,     0,    10,     0,     0,     0,     0,
-       0,    11,     0,     0,    80,     3,     4,     5,     6,     7,
+      14,    22,    12,    58,    45,    46,    50,    73,    30,    31,
+      27,     3,     4,     5,     6,     7,    40,    41,    24,     8,
+       9,    44,    29,    53,    56,    60,    49,    62,    10,    78,
+      91,    79,    24,    47,    11,    48,    64,    65,    66,    67,
+      50,    68,    69,    70,    27,    27,    14,    14,    56,    97,
+      80,    25,    81,    61,    26,    77,     2,    94,    27,    83,
+       3,     4,     5,     6,     7,    90,    93,    95,     8,     9,
+      24,    14,    14,    88,    88,    98,    92,    10,     3,     4,
+       5,     6,     7,    11,    52,     0,     8,     9,     0,    14,
+       0,     0,     0,     0,     0,    10,    14,     0,    88,     0,
+       0,    11,     0,     0,    87,     3,     4,     5,     6,     7,
        0,     0,     0,     8,     9,     3,     4,     5,     6,     7,
        0,     0,    10,     8,     9,     0,     0,     0,    11,     0,
-       0,    92,    10,    49,     5,     6,     0,     0,    11,     0,
-       8,     9,     0,    18,     5,     6,    18,     5,     6,    10,
-       8,     9,     0,     8,     9,    11,    50,     0,     0,    10,
-       0,     0,    10,     0,     0,    11,    68,     0,    11,    29,
-      30,    31,    32,    33,    34,    35,    36,    37,    38,     0,
-       0,     0,     0,     0,     0,     0,     0,    75,    29,    30,
-      31,    32,    33,    34,    35,    36,    37,    38,     0,     0,
-       0,     0,     0,     0,     0,     0,    87,    29,    30,    31,
-      32,    33,    34,    35,    36,    37,    38,     0,     0,     0,
-       0,    58,    29,    30,    31,    32,    33,    34,    35,    36,
-      37,    38,     0,     0,     0,     0,    77,    29,    30,    31,
-      32,    33,    34,    35,    36,    37,    38,     0,    39,    29,
-      30,    31,    32,    33,    34,    35,    36,    37,    38,     0,
-      46,    29,    30,    31,    32,    33,    34,    35,    36,    37,
-      38,     0,    69,    29,    30,    31,    32,    33,    34,    35,
-      36,    37,    38,     0,    78,    29,    30,    31,    32,    33,
-      34,    35,    36,    37,    38,     0,    79,    29,    30,    31,
-      32,    33,    34,    35,    36,    37,    38,    -1,    -1,    -1,
-      -1,    -1,    -1,    35,    36,    37,    38
+       0,    89,    10,     0,     0,    54,     5,     6,    11,     0,
+       0,    99,     8,     9,     0,    21,     5,     6,    21,     5,
+       6,    10,     8,     9,     0,     8,     9,    11,    55,     0,
+       0,    10,     0,     0,    10,     0,     0,    11,    75,     0,
+      11,    32,    33,    34,    35,    36,    37,    38,    39,    40,
+      41,     0,     0,     0,     0,     0,     0,     0,     0,    82,
+      32,    33,    34,    35,    36,    37,    38,    39,    40,    41,
+       0,     0,     0,     0,     0,     0,     0,     0,    96,    32,
+      33,    34,    35,    36,    37,    38,    39,    40,    41,     0,
+       0,     0,     0,    63,    32,    33,    34,    35,    36,    37,
+      38,    39,    40,    41,     0,     0,     0,     0,    84,    32,
+      33,    34,    35,    36,    37,    38,    39,    40,    41,     0,
+      42,    32,    33,    34,    35,    36,    37,    38,    39,    40,
+      41,     0,    51,    32,    33,    34,    35,    36,    37,    38,
+      39,    40,    41,     0,    76,    32,    33,    34,    35,    36,
+      37,    38,    39,    40,    41,     0,    85,    32,    33,    34,
+      35,    36,    37,    38,    39,    40,    41,     0,    86,    32,
+      33,    34,    35,    36,    37,    38,    39,    40,    41,    -1,
+      -1,    -1,    -1,    -1,    -1,    38,    39,    40,    41
   };
 
   const signed char
   parser::yycheck_[] =
   {
-       1,     1,    23,     5,    27,    24,    25,     3,    31,    26,
-       5,    28,    27,    24,    10,    11,    26,    29,    28,    22,
-      23,     3,    24,    31,    31,    27,    22,    23,    24,    31,
-      26,     5,    27,     5,     3,     5,    31,     5,    29,    35,
-      36,    37,    38,    44,    40,    41,    42,    90,    21,    45,
-       0,    -1,    73,    -1,     4,     5,     6,     7,     8,    -1,
-      56,    -1,    12,    13,    -1,    -1,    67,    67,    -1,    -1,
-      -1,    21,    -1,    -1,    -1,    71,    -1,    27,     4,     5,
-       6,     7,     8,    -1,    -1,    -1,    12,    13,    -1,    90,
-      91,    91,    -1,    -1,    -1,    21,    -1,    -1,    -1,    -1,
+       1,     3,     1,    26,    24,    25,    27,    48,    10,    11,
+      31,     4,     5,     6,     7,     8,    22,    23,     5,    12,
+      13,    24,    27,    25,    26,    27,     9,    29,    21,    26,
+       5,    28,     5,    29,    27,    29,    38,    39,    40,    41,
+      27,    43,    44,    45,    31,    31,    47,    48,    50,    90,
+      26,    24,    28,    31,    27,     3,     0,    80,    31,    61,
+       4,     5,     6,     7,     8,    29,     5,     3,    12,    13,
+       5,    72,    73,    72,    73,     5,    78,    21,     4,     5,
+       6,     7,     8,    27,    24,    -1,    12,    13,    -1,    90,
+      -1,    -1,    -1,    -1,    -1,    21,    97,    -1,    97,    -1,
       -1,    27,    -1,    -1,    30,     4,     5,     6,     7,     8,
       -1,    -1,    -1,    12,    13,     4,     5,     6,     7,     8,
       -1,    -1,    21,    12,    13,    -1,    -1,    -1,    27,    -1,
-      -1,    30,    21,     5,     6,     7,    -1,    -1,    27,    -1,
-      12,    13,    -1,     5,     6,     7,     5,     6,     7,    21,
-      12,    13,    -1,    12,    13,    27,    28,    -1,    -1,    21,
-      -1,    -1,    21,    -1,    -1,    27,    28,    -1,    27,    14,
+      -1,    30,    21,    -1,    -1,     5,     6,     7,    27,    -1,
+      -1,    30,    12,    13,    -1,     5,     6,     7,     5,     6,
+       7,    21,    12,    13,    -1,    12,    13,    27,    28,    -1,
+      -1,    21,    -1,    -1,    21,    -1,    -1,    27,    28,    -1,
+      27,    14,    15,    16,    17,    18,    19,    20,    21,    22,
+      23,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    32,
+      14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    32,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    32,    14,    15,
-      16,    17,    18,    19,    20,    21,    22,    23,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    32,    14,    15,    16,
-      17,    18,    19,    20,    21,    22,    23,    -1,    -1,    -1,
-      -1,    28,    14,    15,    16,    17,    18,    19,    20,    21,
-      22,    23,    -1,    -1,    -1,    -1,    28,    14,    15,    16,
-      17,    18,    19,    20,    21,    22,    23,    -1,    25,    14,
+      -1,    -1,    -1,    28,    14,    15,    16,    17,    18,    19,
+      20,    21,    22,    23,    -1,    -1,    -1,    -1,    28,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    -1,
       25,    14,    15,    16,    17,    18,    19,    20,    21,    22,
       23,    -1,    25,    14,    15,    16,    17,    18,    19,    20,
       21,    22,    23,    -1,    25,    14,    15,    16,    17,    18,
       19,    20,    21,    22,    23,    -1,    25,    14,    15,    16,
-      17,    18,    19,    20,    21,    22,    23,    14,    15,    16,
-      17,    18,    19,    20,    21,    22,    23
+      17,    18,    19,    20,    21,    22,    23,    -1,    25,    14,
+      15,    16,    17,    18,    19,    20,    21,    22,    23,    14,
+      15,    16,    17,    18,    19,    20,    21,    22,    23
   };
 
   const signed char
   parser::yystos_[] =
   {
        0,    35,     0,     4,     5,     6,     7,     8,    12,    13,
-      21,    27,    36,    39,    41,    44,    46,    47,     5,    39,
-      41,     5,    24,    27,    31,    43,    27,    39,    39,    14,
-      15,    16,    17,    18,    19,    20,    21,    22,    23,    25,
-      40,    24,    24,    25,    29,    27,    25,    43,    39,     5,
-      28,    39,    42,    44,    45,    39,    31,    39,    28,    39,
-      39,    39,    39,    39,    39,    39,    36,    38,    28,    25,
-       3,    26,    28,    26,    28,    32,    39,    28,    25,    25,
-      30,    36,     5,    39,     5,    44,     3,    32,    37,     5,
-      29,    38,    30
+      21,    27,    36,    38,    40,    43,    45,    46,    47,    48,
+      49,     5,    38,    40,     5,    24,    27,    31,    42,    27,
+      38,    38,    14,    15,    16,    17,    18,    19,    20,    21,
+      22,    23,    25,    39,    24,    24,    25,    29,    29,     9,
+      27,    25,    42,    38,     5,    28,    38,    41,    43,    44,
+      38,    31,    38,    28,    38,    38,    38,    38,    38,    38,
+      38,    36,    37,    37,    50,    28,    25,     3,    26,    28,
+      26,    28,    32,    38,    28,    25,    25,    30,    36,    30,
+      29,     5,    38,     5,    43,     3,    32,    37,     5,    30
   };
 
   const signed char
   parser::yyr1_[] =
   {
        0,    34,    35,    35,    36,    36,    36,    36,    36,    36,
-      36,    37,    36,    38,    38,    39,    39,    39,    39,    39,
-      39,    39,    39,    39,    39,    39,    39,    39,    39,    39,
-      40,    40,    40,    40,    40,    40,    41,    42,    42,    43,
-      43,    44,    44,    45,    45,    46,    46,    47
+      36,    36,    36,    37,    37,    38,    38,    38,    38,    38,
+      38,    38,    38,    38,    38,    38,    38,    38,    38,    38,
+      39,    39,    39,    39,    39,    39,    40,    41,    41,    42,
+      42,    43,    43,    44,    44,    45,    45,    46,    47,    48,
+      50,    49
   };
 
   const signed char
   parser::yyr2_[] =
   {
        0,     2,     0,     2,     4,     4,     2,     4,     2,     3,
-       1,     0,     8,     1,     2,     3,     3,     3,     3,     3,
+       1,     1,     1,     1,     2,     3,     3,     3,     3,     3,
        2,     3,     1,     1,     1,     1,     1,     4,     3,     1,
        1,     1,     1,     1,     1,     1,     2,     1,     3,     3,
-       4,     2,     3,     1,     3,     5,     6,     4
+       4,     2,     3,     1,     3,     5,     6,     4,     4,     4,
+       0,     6
   };
 
 
@@ -1447,9 +1495,10 @@ namespace yy {
   "ELSE_TOKEN", "WHILE_TOKEN", "FOR_TOKEN", "TRUE_TOKEN", "FALSE_TOKEN",
   "EQ", "NE", "LT", "GT", "LE", "GE", "\"+\"", "\"-\"", "\"*\"", "\"/\"",
   "\"=\"", "\";\"", "\",\"", "\"(\"", "\")\"", "\"{\"", "\"}\"", "\"[\"",
-  "\"]\"", "UMINUS", "$accept", "program", "stmt", "$@1", "stmt_list",
-  "expr", "cmp_op", "expr_index_op", "expr_list", "dimension_list",
-  "decl_expr", "decl_expr_list", "decl_fun_header", "decl_fun", YY_NULLPTR
+  "\"]\"", "UMINUS", "$accept", "program", "stmt", "stmt_list", "expr",
+  "cmp_op", "expr_index_op", "expr_list", "dimension_list", "decl_expr",
+  "decl_expr_list", "decl_fun_header", "decl_fun", "if_header_stmt",
+  "if_stmt", "if_else_stmt", "$@1", YY_NULLPTR
   };
 #endif
 
@@ -1458,11 +1507,12 @@ namespace yy {
   const short
   parser::yyrline_[] =
   {
-       0,    84,    84,    85,    90,    96,   102,   111,   120,   126,
-     132,   137,   136,   147,   148,   152,   156,   160,   164,   168,
+       0,    85,    85,    86,    91,    97,   103,   112,   121,   127,
+     133,   137,   141,   147,   148,   152,   156,   160,   164,   168,
      172,   176,   180,   184,   188,   192,   196,   200,   204,   208,
      215,   216,   217,   218,   219,   220,   224,   232,   236,   244,
-     249,   257,   261,   268,   273,   281,   289,   299
+     249,   257,   261,   268,   273,   281,   289,   299,   307,   312,
+     320,   319
   };
 
   void
@@ -1494,9 +1544,9 @@ namespace yy {
 
 
 } // yy
-#line 1498 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
+#line 1548 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.cpp"
 
-#line 306 "parser/parser.y"
+#line 331 "parser/parser.y"
 
 
 void yy::parser::error(const location_type& l, const std::string& m)
