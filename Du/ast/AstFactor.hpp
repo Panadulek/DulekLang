@@ -271,7 +271,7 @@ class AstFactory
 			return nullptr;
 		}
 
-		AstElement* createConditionBlockStmt(AstElement* condExpr);
+		AstElement* createConditionBlockStmt(AstElement* condExpr, AstControlBlock::type type);
 	};
 
 	std::unique_ptr<ScopeFactor> m_scopeFactor;

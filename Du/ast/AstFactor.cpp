@@ -26,15 +26,26 @@ std::unique_ptr<AstScope> AstFactory::ScopeFactor::createFunction(std::string_vi
 	return createFunction(name, AstBuildSystem::Instance().getBuilder().getActualScope(), retType, args);
 }
 
-AstElement* AstFactory::StatementFactor::createConditionBlockStmt(AstElement* condExpr)
+AstElement* AstFactory::StatementFactor::createConditionBlockStmt(AstElement* condExpr, AstControlBlock::type type)
 {
 	if (condExpr)
 	{
 		if (AstExpr* expr = ast_element_cast<AstExpr>(condExpr))
 		{
-			auto* rawCondBlock = dynamic_cast<AstStatement*>(
-				AstBuildSystem::Instance().getBuilder().addElement(std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::CONDITION_BLOCK, getActualScope()))
-				);
+			AstStatement* rawCondBlock = nullptr;
+			if (type == AstControlBlock::CONDITION_BLOCK)
+			{
+				rawCondBlock = dynamic_cast<AstStatement*>(
+					AstBuildSystem::Instance().getBuilder().addElement(std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::CONDITION_BLOCK, getActualScope()))
+					);
+			}
+			else if (type == AstControlBlock::type::LOOP_BLOCK)
+			{
+				rawCondBlock = dynamic_cast<AstStatement*>(
+					AstBuildSystem::Instance().getBuilder().addElement(std::make_unique<AstStatement>(static_cast<AstElement*>(nullptr), std::unique_ptr<AstExpr>(expr), AstStatement::STMT_TYPE::LOOP_BLOCK, getActualScope()))
+					);
+			}
+
 			assert(rawCondBlock && rawCondBlock->isControlBlockStmt());
 			AstBuildSystem::Instance().getBuilder().beginScope(rawCondBlock->getControlBlock()->getCurrentBranch().get());
 			return rawCondBlock;

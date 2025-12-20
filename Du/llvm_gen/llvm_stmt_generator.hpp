@@ -465,59 +465,87 @@ public:
 	static void generateConditionBlockInstruction(AstStatement* stmt, llvm::IRBuilder<>& b)
 	{
 		if (!stmt || !stmt->isControlBlockStmt()) return;
-        auto& controlBlock = stmt->getControlBlock();
-        if (!controlBlock) return;
+		auto& controlBlock = stmt->getControlBlock();
+		if (!controlBlock) return;
 
-        // 1. Condition
-        llvm::Value* condVal = generateExprInstruction(stmt->rhs(), b);
-        if (!condVal) return; 
-        
-        condVal = readLValueFromMemory(stmt->rhs(), condVal, b);
+		llvm::Function* TheFunction = b.GetInsertBlock()->getParent();
 
-        if (condVal->getType()->isIntegerTy() && condVal->getType()->getIntegerBitWidth() != 1) {
-            condVal = b.CreateICmpNE(condVal, llvm::ConstantInt::get(condVal->getType(), 0), "tobool");
-        } else if (condVal->getType()->isFloatingPointTy()) {
-             condVal = b.CreateFCmpONE(condVal, llvm::ConstantFP::get(condVal->getType(), 0.0), "tobool");
-        }
+		auto getCondVal = [&](llvm::IRBuilder<>& builder) -> llvm::Value* {
+			llvm::Value* condVal = generateExprInstruction(stmt->rhs(), builder);
+			if (!condVal) return nullptr;
+			return readLValueFromMemory(stmt->rhs(), condVal, builder);
+		};
 
-        llvm::Function* TheFunction = b.GetInsertBlock()->getParent();
-        
-        llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(b.getContext(), "then", TheFunction);
-        llvm::BasicBlock* ElseBB = controlBlock->getOtherBranch() ? llvm::BasicBlock::Create(b.getContext(), "else") : nullptr;
-        llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(b.getContext(), "ifcont");
+		if (controlBlock->getBlockType() == AstControlBlock::type::CONDITION_BLOCK)
+		{
+			llvm::Value* condVal = getCondVal(b);
+			if (!condVal) return;
 
-        b.CreateCondBr(condVal, ThenBB, ElseBB ? ElseBB : MergeBB);
+			llvm::BasicBlock* ThenBB = llvm::BasicBlock::Create(b.getContext(), "then", TheFunction);
+			llvm::BasicBlock* ElseBB = controlBlock->getOtherBranch() ? llvm::BasicBlock::Create(b.getContext(), "else") : nullptr;
+			llvm::BasicBlock* MergeBB = llvm::BasicBlock::Create(b.getContext(), "ifcont");
 
-        // Emit Then
-        b.SetInsertPoint(ThenBB);
-        
-        auto& thenScope = controlBlock->getBranchScope();
-        if (thenScope) {
-            for(auto& el : thenScope->getStmts()) {
-                 generateInstruction(el.get(), b);
-            }
-        }
-        
-        if (!ThenBB->getTerminator())
-            b.CreateBr(MergeBB);
+			b.CreateCondBr(condVal, ThenBB, ElseBB ? ElseBB : MergeBB);
 
-        if (ElseBB) {
-            TheFunction->insert(TheFunction->end(), ElseBB);
-            b.SetInsertPoint(ElseBB);
-            
-            auto& elseScope = controlBlock->getOtherBranch();
-            if (elseScope) {
-                 for(auto& el : elseScope->getStmts()) {
-                     generateInstruction(el.get(), b);
-                }
-            }
-            
-            if (!ElseBB->getTerminator())
-                b.CreateBr(MergeBB);
-        }
+			// Emit Then
+			b.SetInsertPoint(ThenBB);
 
-        TheFunction->insert(TheFunction->end(), MergeBB);
-        b.SetInsertPoint(MergeBB);
+			auto& thenScope = controlBlock->getBranchScope();
+			if (thenScope) {
+				for (auto& el : thenScope->getStmts()) {
+					generateInstruction(el.get(), b);
+				}
+			}
+
+			if (!ThenBB->getTerminator())
+				b.CreateBr(MergeBB);
+
+			if (ElseBB) {
+				TheFunction->insert(TheFunction->end(), ElseBB);
+				b.SetInsertPoint(ElseBB);
+
+				auto& elseScope = controlBlock->getOtherBranch();
+				if (elseScope) {
+					for (auto& el : elseScope->getStmts()) {
+						generateInstruction(el.get(), b);
+					}
+				}
+
+				if (!ElseBB->getTerminator())
+					b.CreateBr(MergeBB);
+			}
+
+			TheFunction->insert(TheFunction->end(), MergeBB);
+			b.SetInsertPoint(MergeBB);
+		}
+		else if (controlBlock->getBlockType() == AstControlBlock::type::LOOP_BLOCK)
+		{
+			llvm::BasicBlock* CondBB = llvm::BasicBlock::Create(b.getContext(), "loopcond", TheFunction);
+			llvm::BasicBlock* BodyBB = llvm::BasicBlock::Create(b.getContext(), "loopbody", TheFunction);
+			llvm::BasicBlock* EndBB = llvm::BasicBlock::Create(b.getContext(), "loopend");
+
+			b.CreateBr(CondBB);
+
+			b.SetInsertPoint(CondBB);
+			llvm::Value* loopCondVal = getCondVal(b);
+			if (!loopCondVal) return;
+
+			b.CreateCondBr(loopCondVal, BodyBB, EndBB);
+
+			b.SetInsertPoint(BodyBB);
+			auto& bodyScope = controlBlock->getBranchScope();
+			if (bodyScope) {
+				for (auto& el : bodyScope->getStmts()) {
+					generateInstruction(el.get(), b);
+				}
+			}
+
+			if (!b.GetInsertBlock()->getTerminator())
+				b.CreateBr(CondBB);
+
+			TheFunction->insert(TheFunction->end(), EndBB);
+			b.SetInsertPoint(EndBB);
+		}
 	}
 
 	static void generateInstruction(AstElement* stmt, llvm::IRBuilder<>& b)
@@ -547,6 +575,11 @@ public:
 				break;
 			}
 			case AstStatement::STMT_TYPE::CONDITION_BLOCK:
+			{
+				generateConditionBlockInstruction(_stmt, b);
+				break;
+			}
+			case AstStatement::STMT_TYPE::LOOP_BLOCK:
 			{
 				generateConditionBlockInstruction(_stmt, b);
 				break;

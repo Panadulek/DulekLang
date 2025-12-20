@@ -18,6 +18,7 @@ class AstStatement : public AstElement
 		RET_STMT,
 		DECLARATION,
 		CONDITION_BLOCK,
+		LOOP_BLOCK,
 	};
 	const TYPE m_stmtType;
 public:
@@ -31,6 +32,6 @@ public:
     std::unique_ptr<AstExpr> releaseRhs() { return std::move(m_rhs); }
 	void setWrappedRhs(std::unique_ptr<AstExpr>&& expr) { m_rhs = std::move(expr); }
 	AstElement* lhs() { return m_lhsExpr ? m_lhsExpr.get() : m_lhsRef; }
-	bool isControlBlockStmt() const { return m_stmtType == STMT_TYPE::CONDITION_BLOCK && m_controlBlock.has_value(); }
+	bool isControlBlockStmt() const { return (m_stmtType == STMT_TYPE::CONDITION_BLOCK || m_stmtType == STMT_TYPE::LOOP_BLOCK) && m_controlBlock.has_value(); }
 	std::optional<AstControlBlock>& getControlBlock() { return m_controlBlock; }
 };

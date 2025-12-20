@@ -32,7 +32,7 @@ public:
 		m_otherBranch = std::make_unique<AstScope>("other_branch_scope", getParent());
 	}
 	const std::unique_ptr<AstScope>& getBranchScope() const { return m_branch; }
-	void setOtherBranch(std::unique_ptr<AstScope>&& scope) { m_otherBranch = std::move(scope); }
+	void setOtherBranch(std::unique_ptr<AstScope>&& scope) { assert(m_blockType == type::CONDITION_BLOCK); m_otherBranch = std::move(scope); }
 	const std::unique_ptr<AstScope>& getOtherBranch() const { return m_otherBranch; }
 	const type getBlockType() const { return m_blockType; }
 	const std::unique_ptr<AstScope>& getCurrentBranch()

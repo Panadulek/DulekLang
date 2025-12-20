@@ -410,6 +410,7 @@ namespace yy {
       // decl_fun
       // if_header_stmt
       // if_stmt
+      // while_stmt
       char dummy3[sizeof (AstElement*)];
 
       // expr
@@ -576,7 +577,9 @@ namespace yy {
         S_if_header_stmt = 47,                   // if_header_stmt
         S_if_stmt = 48,                          // if_stmt
         S_if_else_stmt = 49,                     // if_else_stmt
-        S_50_1 = 50                              // $@1
+        S_50_1 = 50,                             // $@1
+        S_while_stmt = 51,                       // while_stmt
+        S_52_2 = 52                              // $@2
       };
     };
 
@@ -627,6 +630,7 @@ namespace yy {
       case symbol_kind::S_decl_fun: // decl_fun
       case symbol_kind::S_if_header_stmt: // if_header_stmt
       case symbol_kind::S_if_stmt: // if_stmt
+      case symbol_kind::S_while_stmt: // while_stmt
         value.move< AstElement* > (std::move (that.value));
         break;
 
@@ -825,6 +829,7 @@ switch (yykind)
       case symbol_kind::S_decl_fun: // decl_fun
       case symbol_kind::S_if_header_stmt: // if_header_stmt
       case symbol_kind::S_if_stmt: // if_stmt
+      case symbol_kind::S_while_stmt: // while_stmt
         value.template destroy< AstElement* > ();
         break;
 
@@ -1830,8 +1835,8 @@ switch (yykind)
     /// Constants.
     enum
     {
-      yylast_ = 318,     ///< Last index in yytable_.
-      yynnts_ = 17,  ///< Number of nonterminal symbols.
+      yylast_ = 398,     ///< Last index in yytable_.
+      yynnts_ = 19,  ///< Number of nonterminal symbols.
       yyfinal_ = 2 ///< Termination state number.
     };
 
@@ -1913,6 +1918,7 @@ switch (yykind)
       case symbol_kind::S_decl_fun: // decl_fun
       case symbol_kind::S_if_header_stmt: // if_header_stmt
       case symbol_kind::S_if_stmt: // if_stmt
+      case symbol_kind::S_while_stmt: // while_stmt
         value.copy< AstElement* > (YY_MOVE (that.value));
         break;
 
@@ -1983,6 +1989,7 @@ switch (yykind)
       case symbol_kind::S_decl_fun: // decl_fun
       case symbol_kind::S_if_header_stmt: // if_header_stmt
       case symbol_kind::S_if_stmt: // if_stmt
+      case symbol_kind::S_while_stmt: // while_stmt
         value.move< AstElement* > (YY_MOVE (s.value));
         break;
 
@@ -2074,7 +2081,7 @@ switch (yykind)
 
 
 } // yy
-#line 2078 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
+#line 2085 "E:/LocalRepo/Compilers/DulekLang/Du/gen/parser.hpp"
 
 
 

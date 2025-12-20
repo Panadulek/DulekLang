@@ -10,6 +10,10 @@ AstStatement::AstStatement(std::unique_ptr<AstExpr> lhs, std::unique_ptr<AstExpr
 	{
 		m_controlBlock.emplace(AstControlBlock("control_block", AstControlBlock::type::CONDITION_BLOCK, parent));
 	}
+	else if (type == STMT_TYPE::LOOP_BLOCK)
+	{
+		m_controlBlock.emplace(AstControlBlock("control_block", AstControlBlock::type::LOOP_BLOCK, parent));
+	}
 }
 
 // Konstruktor dla referencji jako LHS (nie przejmuje własności)
@@ -20,6 +24,10 @@ AstStatement::AstStatement(AstElement* lhs, std::unique_ptr<AstExpr> rhs, STMT_T
 	if (type == STMT_TYPE::CONDITION_BLOCK)
 	{
 		m_controlBlock.emplace(AstControlBlock("control_block", AstControlBlock::type::CONDITION_BLOCK, parent));
+	}
+	else if(type == STMT_TYPE::LOOP_BLOCK)
+	{
+		m_controlBlock.emplace(AstControlBlock("control_block", AstControlBlock::type::LOOP_BLOCK, parent));
 	}
 }
 

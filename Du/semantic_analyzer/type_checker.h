@@ -340,7 +340,7 @@ private:
                 // 2. Check assignments / declarations
                 std::optional<BasicTypes> optType = std::nullopt;
 
-                if (stmt->getStmtType() == AstStatement::STMT_TYPE::CONDITION_BLOCK)
+				if (stmt->getStmtType() == AstStatement::STMT_TYPE::CONDITION_BLOCK || stmt->getStmtType() == AstStatement::STMT_TYPE::LOOP_BLOCK)
                 {
                     if (stmt->isControlBlockStmt())
                     {

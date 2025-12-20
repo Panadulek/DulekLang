@@ -68,7 +68,7 @@
 
 /* ZMIANA: Powrót do surowych wskaźników w wariancie, aby uniknąć problemów z kopiowaniem unique_ptr */
 %type <AstExpr*> expr expr_index_op
-%type <AstElement*> decl_expr decl_fun decl_fun_header stmt if_stmt if_header_stmt
+%type <AstElement*> decl_expr decl_fun decl_fun_header stmt if_stmt if_header_stmt while_stmt
 %type <AstArgs*> expr_list
 %type <ScopeDecorator::Function::CONTAINER*> decl_expr_list
 %type <ArrayDecorator::Array*> dimension_list
@@ -141,6 +141,10 @@ stmt:
     | if_else_stmt
       {
 	    $$ = nullptr;
+      }
+    | while_stmt
+      {
+		  $$ = nullptr;
       }
 
 stmt_list:
@@ -306,7 +310,7 @@ decl_fun:
 if_header_stmt:
     IF_TOKEN LPAREN expr RPAREN
     {
-        $$ = AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt($3);
+        $$ = AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt($3, AstControlBlock::type::CONDITION_BLOCK);
     }
 if_stmt:
     if_header_stmt LBRACE stmt_list RBRACE
@@ -327,6 +331,18 @@ if_else_stmt:
     {
        AstBuildSystem::Instance().getBuilder().exitScope();
     }
+
+    while_stmt:
+    WHILE_TOKEN LPAREN expr RPAREN 
+    {
+        AstBuildSystem::Instance().getFactory().stmtFactor().createConditionBlockStmt($3, AstControlBlock::type::LOOP_BLOCK);
+	}LBRACE stmt_list RBRACE
+    {
+        AstBuildSystem::Instance().getBuilder().exitScope();
+        $$ = nullptr;
+    }
+   
+
 
 %%
 
