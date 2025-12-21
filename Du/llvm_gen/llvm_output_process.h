@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdlib>
 #include <llvm/IR/Module.h>
 #include <memory>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -102,30 +103,57 @@ public:
             llvm::Reloc::PIC_
         );
 
+
+		auto gen_file = [](std::string filename, llvm::CodeGenFileType genType, llvm::Module* m, llvm::TargetMachine* tm, std::string* command)->void
+			{
+				if(!m || !tm)
+					return;
+				if (genType == llvm::CodeGenFileType::AssemblyFile)
+					filename += ".s";
+				else if (genType == llvm::CodeGenFileType::ObjectFile)
+				{
+					filename += ".obj";
+					if(command)
+						*command = "clang output.obj -o output.exe -Xlinker /subsystem:console -Xlinker /entry:main";
+				}
+				else 
+					return;
+				std::error_code ec;
+				llvm::raw_fd_ostream dest(filename, ec);
+
+				if (ec) {
+					llvm::errs() << "Could not open file: " << ec.message() << "\n";
+					return;
+				}
+				llvm::legacy::PassManager pm;
+				if (tm->addPassesToEmitFile(pm, dest, nullptr, genType)) {
+					llvm::errs() << "TargetMachine can't emit a file of this type!\n";
+					return;
+				}
+
+				pm.run(*m);
+				dest.flush();
+				llvm::outs() << "Wygenerowano plik: " << filename << "\n";
+
+			};
+
         m_module->setDataLayout(tm->createDataLayout());
-
-        std::string filename = "output.s";
-
-        std::error_code ec;
-        llvm::raw_fd_ostream dest(filename, ec);
-
-        if (ec) {
-            llvm::errs() << "Could not open file: " << ec.message() << "\n";
-            return;
-        }
-
-        llvm::legacy::PassManager pm;
-
-        auto fileType = llvm::CodeGenFileType::AssemblyFile;
-
-        if (tm->addPassesToEmitFile(pm, dest, nullptr, fileType)) {
-            llvm::errs() << "TargetMachine can't emit a file of this type!\n";
-            return;
-        }
-
-        pm.run(*m_module);
-        llvm::outs() << "Wygenerowano plik: " << filename << "\n";
-
+		std::string filename = "output";
+		
+     
+		std::string command = "";
+		
+		gen_file(filename, llvm::CodeGenFileType::ObjectFile, m_module.get(), tm, &command);
+		gen_file(filename, llvm::CodeGenFileType::AssemblyFile, m_module.get(), tm, nullptr);
+		int ret = std::system(command.c_str());
+		if (ret == 0)
+		{
+			llvm::outs() << "Wygenerowano plik wykonywalny: output.exe\n";
+		}
+		else
+		{
+			llvm::outs() << "B³¹d podczas generowania pliku wykonywalnego.\n";
+		}
       
         delete tm;
     }
