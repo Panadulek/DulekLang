@@ -13,6 +13,7 @@
 #include <llvm/Target/CGPassBuilderOption.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/TargetParser/Host.h>
+
 class llvmOutputProcess
 {
 protected:
@@ -65,11 +66,9 @@ public:
 
 	llvmAsmOutputProcess(LlvmGen& gen, std::string_view startFunctionName, TargetPlatform tp) : m_platform(tp), llvmOutputProcess(gen.releaseModule(), startFunctionName)
 	{
-		llvm::InitializeAllTargetInfos();
-		llvm::InitializeAllTargets();
-		llvm::InitializeAllTargetMCs();
-		llvm::InitializeAllAsmParsers();
-		llvm::InitializeAllAsmPrinters();
+		llvm::InitializeNativeTarget();
+		llvm::InitializeNativeTargetAsmPrinter();
+		llvm::InitializeNativeTargetAsmParser();
 	}
     void process() override
     {
