@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.20)
 
 # =============================================================
-# 1. PROJEKT I STANDARDY (C++20)
+# 1. PROJECT AND STANDARDS
 # =============================================================
 project("Du" CXX)
 
@@ -9,18 +9,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Porządkowanie folderów w Visual Studio (Solution Explorer)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Wymuszenie Dynamicznego Runtime (MDd), aby pasował do LLVM z Conana
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
-# Ścieżki projektowe
 set(CONAN_LOCAL_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include_3rd_party/conan_deps")
 set(3RD_PARTY_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/../include_3rd_party")
 
 # =============================================================
-# 2. KONFIGURACJA REPOZYTORIUM CONANA (DYSK E:, VS 18 INSIDERS)
+# 2. CONAN REPOSITORY CONFIGURATION
 # =============================================================
 set(MY_CONAN_HOME "E:/tools/conan_cache")
 file(TO_NATIVE_PATH "${MY_CONAN_HOME}" CONAN_HOME_NATIVE)
@@ -30,16 +27,13 @@ set(MY_VS_PATH "E:/Program Files/Microsoft Visual Studio/18/Insiders")
 file(TO_NATIVE_PATH "${MY_VS_PATH}" MY_VS_PATH_NATIVE)
 
 # =============================================================
-# 3. AUTOMATYZACJA / INSTALACJA LLVM PRZEZ CONANA
+# 3. CONAN AUTOMATION
 # =============================================================
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 function(setup_conan_and_llvm)
     if(EXISTS "${CONAN_LOCAL_INSTALL_DIR}/LLVMConfig.cmake" OR EXISTS "${CONAN_LOCAL_INSTALL_DIR}/llvm-core-config.cmake")
         set(CMAKE_PREFIX_PATH "${CONAN_LOCAL_INSTALL_DIR}" PARENT_SCOPE)
-        return()
-    elseif(EXISTS "${CONAN_LOCAL_INSTALL_DIR}/build/generators/LLVMConfig.cmake")
-        set(CMAKE_PREFIX_PATH "${CONAN_LOCAL_INSTALL_DIR}/build/generators" PARENT_SCOPE)
         return()
     endif()
 
@@ -58,37 +52,24 @@ function(setup_conan_and_llvm)
                 -c "tools.cmake.cmaketoolchain:generator=Ninja"
         RESULT_VARIABLE conan_res
     )
-
-    if(NOT conan_res EQUAL 0)
-        message(FATAL_ERROR "Błąd instalacji LLVM przez Conan.")
-    endif()
-
     set(CMAKE_PREFIX_PATH "${CONAN_LOCAL_INSTALL_DIR}" PARENT_SCOPE)
 endfunction()
 
 setup_conan_and_llvm()
 
 # =============================================================
-# 4. KONFIGURACJA PAKIETÓW (LLVM, BISON, FLEX)
+# 4. PACKAGES CONFIGURATION (LLVM, BISON, FLEX)
 # =============================================================
-
 find_package(LLVM REQUIRED CONFIG)
 llvm_map_components_to_libnames(LLVM_LIBS all)
 
 find_package(BISON REQUIRED)
 find_package(FLEX REQUIRED)
 
-# Pliki generowane trafiają do BINARY_DIR (folder 'out')
 set(GEN_DIR "${CMAKE_CURRENT_BINARY_DIR}/gen")
 file(MAKE_DIRECTORY "${GEN_DIR}")
 
-# --- FIX: NORMALIZACJA ŚCIEŻKI DLA BISON ---
-# Upewniamy się, że ścieżka do mapowania używa forward slashy (/)
-# i kończy się slashem, aby "wyciąć" całą ścieżkę do folderu Du/
-set(MAP_FROM "${CMAKE_CURRENT_SOURCE_DIR}/")
-
-# Bison 3.7+ mapuje ścieżki absolutne na relatywne w dyrektywach #line
-set(BISON_MAP_FLAGS "--file-prefix-map=${MAP_FROM}=")
+set(BISON_MAP_FLAGS "--file-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}/=")
 
 BISON_TARGET(Parser 
     "${CMAKE_CURRENT_SOURCE_DIR}/parser/parser.y" 
@@ -97,8 +78,6 @@ BISON_TARGET(Parser
     COMPILE_FLAGS "${BISON_MAP_FLAGS}"
 )
 
-# Dla Flexa stosujemy podobną flagę (choć Flex rzadziej jej potrzebuje 
-# przy użyciu krótkich nazw wyjściowych)
 FLEX_TARGET(Scanner 
     "lexer/scanner.l" 
     "${GEN_DIR}/scanner.cpp"
@@ -106,8 +85,10 @@ FLEX_TARGET(Scanner
 
 ADD_FLEX_BISON_DEPENDENCY(Scanner Parser)
 
+set_source_files_properties("${GEN_DIR}/parser.cpp" "${GEN_DIR}/scanner.cpp" PROPERTIES GENERATED TRUE)
+
 # =============================================================
-# 5. FLAGI KOMPILACJI (MSVC / CLANG-CL)
+# 5. COMPILATION FLAGS
 # =============================================================
 if(MSVC)
     add_compile_definitions(
@@ -120,9 +101,8 @@ if(MSVC)
 endif()
 
 # =============================================================
-# 6. DEFINICJA TARGETÓW (KOMPILATOR I AST)
+# 6. TARGETS DEFINITION
 # =============================================================
-
 add_library(DuAst STATIC
     Terminal/StandardTerminal.cpp
     Terminal/Terminal.cpp
@@ -150,14 +130,9 @@ add_executable(Du
 )
 
 # =============================================================
-# 7. LINKOWANIE I ŚCIEŻKI INCLUDE
+# 7. LINKING AND INCLUDES
 # =============================================================
-
-target_link_libraries(Du PRIVATE 
-    DuAst 
-    ${LLVM_LIBS}
-    ws2_32 version dbghelp
-)
+target_link_libraries(Du PRIVATE DuAst ${LLVM_LIBS} ws2_32 version dbghelp)
 
 target_include_directories(Du PRIVATE 
     "${GEN_DIR}"
