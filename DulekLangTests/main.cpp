@@ -1,29 +1,30 @@
 
-#include<gtest/gtest.h>
+#include <gtest/gtest.h>
 #include <iostream>
 #include <algorithm>
-#ifdef _WIN32
-#include <Windows.h>
-#else
-
-#endif
-
-
+#include "ast/AstBuildSystem.hpp"
+#include "ast/AstScope.hpp"
 #include "AstScopeTests.h"
 #include "CastTest.h"
 #include "AstBuilderTest.h"
-#include "AllocatorTest.h"
-
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#endif
+AstScope* getActualScope()
+{
+	return AstBuildSystem::Instance().getBuilder().getActualScope();
+}
 void attach()
 {
 #ifdef _WIN32
 	while (!IsDebuggerPresent())
+
 		Sleep(1);
 #else
-
 #endif
-}
 
+}
 #define ATTACH1
 int main(int argc, char** argv)
 {
@@ -34,6 +35,9 @@ int main(int argc, char** argv)
 	int ret = RUN_ALL_TESTS();
 	std::cin.get();
 	return ret;
+
 }
+
+
 
 
