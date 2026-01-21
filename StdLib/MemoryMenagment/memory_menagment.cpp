@@ -81,70 +81,85 @@ GCHeap::GCHeap(std::size_t arenaSize) : m_spaces{ std::make_unique<GCArena>(aren
 }
 
 void* GCHeap::allocate(std::size_t bytes, TypeInfo* type) {
-    size_t totalSize = sizeof(ObjHeader) + bytes;
-    void* ptr = m_spaces.first->allocate(totalSize);
-    if (!ptr) {
-        collect();
-        ptr = m_spaces.first->allocate(totalSize);
-        if (!ptr) throw std::bad_alloc();
-    }
+	size_t totalSize = sizeof(ObjHeader) + bytes;
+	void* ptr = m_spaces.first->allocate(totalSize);
+	if (!ptr) {
+		collect();
+		ptr = m_spaces.first->allocate(totalSize);
+		if (!ptr) throw std::bad_alloc();
+	}
 
-    ObjHeader* h = static_cast<ObjHeader*>(ptr);
-    h->type = type;
-    h->forwardingAddr = 0;
+	ObjHeader* h = static_cast<ObjHeader*>(ptr);
+	h->type = type;
+	h->forwardingAddr = 0;
 
-    return static_cast<uint8_t*>(ptr) + sizeof(ObjHeader);
+	return static_cast<uint8_t*>(ptr) + sizeof(ObjHeader);
 }
 
 void GCHeap::collect() {
-    std::swap(m_spaces.first, m_spaces.second);
+	std::swap(m_spaces.first, m_spaces.second);
 
-    GCArena* toSpace = m_spaces.first.get();
-    GCArena* fromSpace = m_spaces.second.get();
+	GCArena* toSpace = m_spaces.first.get();
+	GCArena* fromSpace = m_spaces.second.get();
 
-    toSpace->reset();
+	toSpace->reset();
 
-    uint8_t* scan = toSpace->getStart();
-    for (void** rootPtr : m_roots) {
-        if (*rootPtr) {
-            *rootPtr = copyObject(*rootPtr);
-        }
-    }
+	uint8_t* scan = toSpace->getStart();
+	for (void** rootPtr : m_roots) {
+		if (*rootPtr) {
+			*rootPtr = copyObject(*rootPtr);
+		}
+	}
 
-    while (scan < toSpace->getTop()) {
-        ObjHeader* h = reinterpret_cast<ObjHeader*>(scan);
-        uint8_t* data = reinterpret_cast<uint8_t*>(h) + sizeof(ObjHeader);
+	while (scan < toSpace->getTop()) {
+		ObjHeader* h = reinterpret_cast<ObjHeader*>(scan);
+		uint8_t* data = reinterpret_cast<uint8_t*>(h) + sizeof(ObjHeader);
 
-        for (uint32_t i = 0; i < h->type->numPointers; ++i) {
-            uint32_t offset = h->type->pointerOffsets[i];
-            void** field = reinterpret_cast<void**>(data + offset);
+		for (uint32_t i = 0; i < h->type->numPointers; ++i) {
+			uint32_t offset = h->type->pointerOffsets[i];
+			void** field = reinterpret_cast<void**>(data + offset);
 
-            if (*field) {
-                *field = copyObject(*field);
-            }
-        }
+			if (*field) {
+				*field = copyObject(*field);
+			}
+		}
 
-        size_t fullSize = (sizeof(ObjHeader) + h->type->size + 7) & ~7;
-        scan += fullSize;
-    }
-    fromSpace->reset();
+		size_t fullSize = (sizeof(ObjHeader) + h->type->size + 7) & ~7;
+		scan += fullSize;
+	}
+	fromSpace->reset();
 }
 
 void* GCHeap::copyObject(void* oldObj) {
-    GCArena* toSpace = m_spaces.first.get();
-    GCArena* fromSpace = m_spaces.second.get();
-    if (!oldObj) return nullptr;
-    if (!fromSpace->contains(oldObj)) return oldObj;
-    ObjHeader* oldHeader = reinterpret_cast<ObjHeader*>(static_cast<uint8_t*>(oldObj) - sizeof(ObjHeader));
-    if (oldHeader->forwardingAddr != 0) {
-        return reinterpret_cast<void*>(oldHeader->forwardingAddr);
-    }
-    size_t totalSize = sizeof(ObjHeader) + oldHeader->type->size;
-    void* newRaw = toSpace->allocate(totalSize);
-    if (!newRaw) return oldObj;
-    memcpy(newRaw, oldHeader, totalSize);
-    void* newObjData = static_cast<uint8_t*>(newRaw) + sizeof(ObjHeader);
-    oldHeader->forwardingAddr = reinterpret_cast<uintptr_t>(newObjData);
+	GCArena* toSpace = m_spaces.first.get();
+	GCArena* fromSpace = m_spaces.second.get();
+	if (!oldObj) return nullptr;
+	if (!fromSpace->contains(oldObj)) return oldObj;
+	ObjHeader* oldHeader = reinterpret_cast<ObjHeader*>(static_cast<uint8_t*>(oldObj) - sizeof(ObjHeader));
+	if (oldHeader->forwardingAddr != 0) {
+		return reinterpret_cast<void*>(oldHeader->forwardingAddr);
+	}
+	size_t totalSize = sizeof(ObjHeader) + oldHeader->type->size;
+	void* newRaw = toSpace->allocate(totalSize);
+	if (!newRaw) return oldObj;
+	memcpy(newRaw, oldHeader, totalSize);
+	void* newObjData = static_cast<uint8_t*>(newRaw) + sizeof(ObjHeader);
+	oldHeader->forwardingAddr = reinterpret_cast<uintptr_t>(newObjData);
 
-    return newObjData;
+	return newObjData;
+}
+
+static GCHeap* globalHeap = nullptr;
+
+extern "C" { 
+	void* gc_allocate(size_t size, TypeInfo* type) {
+		if (!globalHeap) globalHeap = new GCHeap(1024 * 1024);
+		return globalHeap->allocate(size, type);
+	}
+
+	void gc_collect() {
+		if (globalHeap) {
+			globalHeap->collect();
+		}
+	}
 }

@@ -55,3 +55,9 @@ public:
 		m_roots.push_back(rootPtr);
 	}
 };
+
+
+extern "C" {
+	void* gc_allocate(size_t size, TypeInfo* type);
+	void gc_collect();
+}
